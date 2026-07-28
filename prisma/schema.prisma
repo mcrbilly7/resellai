@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Local-first inventory record. Mirrors supabase/schema.sql for the
+// optional Postgres cloud-sync backend described in the product spec.
+model InventoryItem {
+  id       String  @id @default(cuid())
+  sku      String  @unique
+  barcode  String?
+
+  // Identification
+  name     String
+  brand    String?
+  model    String?
+  category String?
+  color    String?
+  size     String?
+  material String?
+  year     String?
+  rarity   String?
+
+  // Condition grading
+  condition       String?
+  conditionScore  Int?
+  conditionReason String?
+  aiConfidence    Int?
+
+  // Photos: JSON array of data URLs / storage paths, ranked best-first
+  photos String @default("[]")
+
+  // Acquisition
+  purchaseDate DateTime?
+  purchasePrice Float?
+  shippingCostEstimate Float?
+  packagingCost Float?
+  location      String?
+
+  // Pipeline status: purchased, needs_photos, ai_processing, draft, listed, sold, shipped, archived
+  status String @default("purchased")
+
+  // Pricing engine output
+  msrp            Float?
+  currentRetail   Float?
+  avgSoldPrice    Float?
+  lowestActive    Float?
+  highestSoldPrice Float?
+  fastPrice   Float?
+  normalPrice Float?
+  maxPrice    Float?
+  listingPrice Float?
+  pricingStrategy String @default("normal")
+
+  // Listing generator output
+  title          String?
+  description    String?
+  keywords       String  @default("[]")
+  itemSpecifics  String  @default("{}")
+  marketplaces   String  @default("[]")
+  marketplaceStatus String @default("{}")
+
+  // Sale tracking
+  salePrice   Float?
+  platformFees Float?
+  soldDate    DateTime?
+  daysListed  Int?
+  profit      Float?
+  roi         Float?
+  profitMargin Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([brand])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   @default("info")
+  itemId    String?
+  createdAt DateTime @default(now())
+}
+
+model MarketplaceConnection {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  connected Boolean  @default(false)
+  feePercent Float   @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+}
