@@ -144,14 +144,17 @@ inherently need a live model call and stay online-only.
 To Vercel (or any host with no persistent local disk):
 
 1. **Database:** create a free database at https://turso.tech, then set
-   `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in your host's environment
-   variables. `src/lib/prisma.ts` automatically switches to it — a plain
-   local SQLite file (`DATABASE_URL`) only works for local dev, since
-   serverless functions don't keep a persistent filesystem between requests.
-   Apply the schema against Turso once before first deploy:
-   ```bash
-   DATABASE_URL="<your TURSO_DATABASE_URL>?authToken=<your TURSO_AUTH_TOKEN>" npx prisma db push
+   `DATABASE_URL` in your host's environment variables to its `libsql://`
+   connection string with the auth token appended as a query param:
    ```
+   DATABASE_URL="libsql://your-db.turso.io?authToken=eyJhbGciOi..."
+   ```
+   `src/lib/prisma.ts` detects the `libsql://` scheme and routes through
+   Turso automatically — a plain local SQLite file only works for local dev,
+   since serverless functions don't keep a persistent filesystem between
+   requests. The schema syncs itself: `npm run build` runs `prisma db push`
+   before `next build` (see `package.json`), so every deploy applies any
+   schema changes to Turso automatically — no command to run yourself.
 2. **Auth:** set `AUTH_SECRET` (see [Getting started](#getting-started)) and
    `COOKIE_SECURE=true` (required once served over HTTPS, which Vercel
    always does — see the cookie note above).
@@ -163,7 +166,9 @@ To Vercel (or any host with no persistent local disk):
 None of this was testable end-to-end from this sandbox (no network access to
 Turso or Gmail's SMTP servers here), so treat the Turso/Gmail wiring as
 built-and-reviewed, not verified against the real services — the local
-SQLite path and the console-log email fallback *are* verified.
+SQLite path (including the `prisma db push`-on-build step, which really did
+run against the local file during verification) and the console-log email
+fallback *are* verified.
 
 ## Scope & deviations
 
