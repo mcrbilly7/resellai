@@ -4,21 +4,38 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { InventoryItemDTO } from "@/lib/types";
 import { MARKETPLACES } from "@/lib/marketplaces";
+import type { RepricingCandidate } from "@/lib/repricing";
 
 export default function ListingsPage() {
   const [drafts, setDrafts] = useState<InventoryItemDTO[]>([]);
   const [live, setLive] = useState<InventoryItemDTO[]>([]);
+  const [suggestions, setSuggestions] = useState<RepricingCandidate[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    const [d, l] = await Promise.all([
+    const [d, l, r] = await Promise.all([
       fetch("/api/inventory?status=draft").then((r) => r.json()),
       fetch("/api/inventory?status=listed").then((r) => r.json()),
+      fetch("/api/repricing").then((r) => r.json()),
     ]);
     setDrafts(d.items);
     setLive(l.items);
+    setSuggestions(r.suggestions);
     setLoading(false);
+  }
+
+  async function applyReprice(candidate: RepricingCandidate) {
+    await fetch(`/api/inventory/${candidate.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingPrice: candidate.suggestedPrice }),
+    });
+    load();
+  }
+
+  function dismissReprice(id: string) {
+    setSuggestions((prev) => prev.filter((s) => s.id !== id));
   }
 
   useEffect(() => {
@@ -28,13 +45,15 @@ export default function ListingsPage() {
 
   async function publish(item: InventoryItemDTO) {
     const marketplaces = item.marketplaces.length > 0 ? item.marketplaces : ["ebay"];
-    const marketplaceStatus: Record<string, string> = {};
-    for (const m of marketplaces) marketplaceStatus[m] = "pending";
-    await fetch(`/api/inventory/${item.id}`, {
-      method: "PATCH",
+    const res = await fetch(`/api/inventory/${item.id}/publish`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "listed", marketplaces, marketplaceStatus }),
+      body: JSON.stringify({ marketplaces }),
     });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(`Publishing failed: ${err.error ?? "unknown error"}`);
+    }
     load();
   }
 
@@ -94,6 +113,41 @@ export default function ListingsPage() {
           </div>
         )}
       </section>
+
+      {suggestions.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold">Repricing Suggestions ({suggestions.length})</h2>
+          <div className="rounded-2xl border border-border bg-surface divide-y divide-border">
+            {suggestions.map((s) => (
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <Link href={`/inventory/${s.id}`} className="font-medium hover:text-accent">
+                    {s.name}
+                  </Link>
+                  <p className="text-xs text-muted">{s.reason}</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-sm">
+                    ${s.listingPrice.toFixed(2)} → <span className="text-warning font-semibold">${s.suggestedPrice.toFixed(2)}</span>
+                  </span>
+                  <button
+                    onClick={() => applyReprice(s)}
+                    className="rounded-lg bg-accent text-accent-foreground text-xs font-semibold px-3 py-1.5"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => dismissReprice(s.id)}
+                    className="rounded-lg border border-border text-xs font-semibold px-2.5 py-1.5"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="font-semibold">Live Listings ({live.length})</h2>

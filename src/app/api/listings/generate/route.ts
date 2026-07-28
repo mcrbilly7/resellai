@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { generateListing } from "@/lib/ai";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const item = (await request.json()) as {
     name: string;
     brand?: string | null;

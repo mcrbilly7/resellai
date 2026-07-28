@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import { prisma } from "@/lib/prisma";
 import { generateSku } from "@/lib/sku";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 interface ImportRow {
   name?: string;
@@ -17,6 +18,9 @@ interface ImportRow {
 }
 
 export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { csv } = (await request.json()) as { csv?: string };
   if (!csv) return NextResponse.json({ error: "csv text is required" }, { status: 400 });
 
@@ -25,11 +29,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.errors[0].message }, { status: 400 });
   }
 
-  const existingSkus = new Set((await prisma.inventoryItem.findMany({ select: { sku: true } })).map((i) => i.sku));
+  const existingSkus = new Set(
+    (await prisma.inventoryItem.findMany({ where: { userId: session.id }, select: { sku: true } })).map((i) => i.sku)
+  );
   const existingBarcodes = new Set(
-    (await prisma.inventoryItem.findMany({ where: { barcode: { not: null } }, select: { barcode: true } })).map(
-      (i) => i.barcode
-    )
+    (
+      await prisma.inventoryItem.findMany({
+        where: { userId: session.id, barcode: { not: null } },
+        select: { barcode: true },
+      })
+    ).map((i) => i.barcode)
   );
 
   let created = 0;
@@ -46,6 +55,7 @@ export async function POST(request: Request) {
     try {
       await prisma.inventoryItem.create({
         data: {
+          userId: session.id,
           sku,
           barcode: row.barcode || null,
           name: row.name,
@@ -68,7 +78,7 @@ export async function POST(request: Request) {
 
   if (created > 0) {
     await prisma.activityLog.create({
-      data: { message: `Imported ${created} item(s) from CSV`, type: "inventory" },
+      data: { userId: session.id, message: `Imported ${created} item(s) from CSV`, type: "inventory" },
     });
   }
 

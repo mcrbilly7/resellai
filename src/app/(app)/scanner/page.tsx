@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { ProfitCalculator } from "@/components/ProfitCalculator";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { CONDITIONS, MARKETPLACES } from "@/lib/marketplaces";
 
 interface Analysis {
@@ -20,6 +22,8 @@ interface Analysis {
   conditionScore: number;
   conditionReason: string;
   aiConfidence: number;
+  authenticityRisk: "low" | "medium" | "high";
+  authenticityNotes: string;
   msrp: number;
   currentRetail: number;
   avgSoldPrice: number;
@@ -50,6 +54,7 @@ export default function ScannerPage() {
   const [step, setStep] = useState<Step>("upload");
   const [photos, setPhotos] = useState<string[]>([]);
   const [barcode, setBarcode] = useState("");
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [note, setNote] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
@@ -131,9 +136,6 @@ export default function ScannerPage() {
     if (!analysis || !listing) return;
     setSaving(true);
     try {
-      const marketplaceStatus: Record<string, string> = {};
-      if (publish) for (const m of marketplaces) marketplaceStatus[m] = "pending";
-
       const res = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,11 +154,13 @@ export default function ScannerPage() {
           conditionScore: analysis.conditionScore,
           conditionReason: analysis.conditionReason,
           aiConfidence: analysis.aiConfidence,
+          authenticityRisk: analysis.authenticityRisk,
+          authenticityNotes: analysis.authenticityNotes,
           photos,
           purchasePrice: profit.purchasePrice || null,
           shippingCostEstimate: profit.shippingCost || null,
           packagingCost: profit.packagingCost || null,
-          status: publish ? "listed" : "draft",
+          status: "draft",
           msrp: analysis.msrp,
           currentRetail: analysis.currentRetail,
           avgSoldPrice: analysis.avgSoldPrice,
@@ -171,12 +175,25 @@ export default function ScannerPage() {
           description: listing.description,
           keywords: listing.keywords,
           itemSpecifics: listing.itemSpecifics,
-          marketplaces: publish ? marketplaces : [],
-          marketplaceStatus,
+          marketplaces: [],
+          marketplaceStatus: {},
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Save failed");
       const data = await res.json();
+
+      if (publish) {
+        const publishRes = await fetch(`/api/inventory/${data.item.id}/publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ marketplaces }),
+        });
+        if (!publishRes.ok) {
+          const err = await publishRes.json();
+          alert(`Saved as draft, but publishing failed: ${err.error ?? "unknown error"}`);
+        }
+      }
+
       router.push(`/inventory/${data.item.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Save failed");
@@ -211,23 +228,45 @@ export default function ScannerPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-muted mb-1">Barcode (UPC / EAN / ISBN)</label>
-              <input
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Scan or type a barcode"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="Scan or type a barcode"
+                  className="flex-1 min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowBarcodeScanner(true)}
+                  className="rounded-lg border border-border px-3 py-2 text-sm shrink-0 hover:bg-surface-muted"
+                  title="Scan with camera"
+                >
+                  📷
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-muted mb-1">Notes (optional)</label>
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Anything the AI should know"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Anything the AI should know"
+                  className="flex-1 min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                />
+                <VoiceInputButton onResult={(text) => setNote((prev) => (prev ? `${prev} ${text}` : text))} />
+              </div>
             </div>
           </div>
+          {showBarcodeScanner && (
+            <BarcodeScanner
+              onDetected={(code) => {
+                setBarcode(code);
+                setShowBarcodeScanner(false);
+              }}
+              onClose={() => setShowBarcodeScanner(false)}
+            />
+          )}
           {analyzeError && <p className="text-sm text-danger">{analyzeError}</p>}
           <button
             onClick={handleAnalyze}
@@ -260,6 +299,18 @@ export default function ScannerPage() {
                 <TextField label="Year" value={analysis.year ?? ""} onChange={(v) => updateAnalysis("year", v)} />
               </div>
               <p className="text-xs text-muted">AI confidence: {analysis.aiConfidence}%</p>
+              {analysis.authenticityRisk !== "low" && (
+                <div
+                  className={`rounded-lg px-3 py-2 text-xs ${
+                    analysis.authenticityRisk === "high"
+                      ? "bg-danger/10 text-danger border border-danger/30"
+                      : "bg-warning/10 text-warning border border-warning/30"
+                  }`}
+                >
+                  <span className="font-semibold uppercase">{analysis.authenticityRisk} authenticity risk</span>
+                  <p className="mt-0.5">{analysis.authenticityNotes}</p>
+                </div>
+              )}
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
@@ -369,7 +420,14 @@ export default function ScannerPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted mb-1">Description</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-muted">Description</label>
+                <VoiceInputButton
+                  onResult={(text) =>
+                    updateListing("description", listing.description ? `${listing.description} ${text}` : text)
+                  }
+                />
+              </div>
               <textarea
                 value={listing.description}
                 onChange={(e) => updateListing("description", e.target.value)}

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InventoryItemDTO } from "@/lib/types";
-import { STATUS_PIPELINE, STATUS_LABELS } from "@/lib/marketplaces";
+import { STATUS_PIPELINE, STATUS_LABELS, CONDITIONS } from "@/lib/marketplaces";
 import { StatusBadge } from "@/components/StatusBadge";
+import { apiFetch } from "@/lib/offline";
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItemDTO[]>([]);
@@ -13,6 +14,7 @@ export default function InventoryPage() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function load() {
@@ -49,7 +51,7 @@ export default function InventoryPage() {
   async function bulkDelete() {
     if (selected.size === 0) return;
     if (!confirm(`Delete ${selected.size} item(s)? This can't be undone.`)) return;
-    await Promise.all([...selected].map((id) => fetch(`/api/inventory/${id}`, { method: "DELETE" })));
+    await Promise.all([...selected].map((id) => apiFetch(`/api/inventory/${id}`, { method: "DELETE" })));
     setSelected(new Set());
     load();
   }
@@ -96,6 +98,12 @@ export default function InventoryPage() {
           >
             Export CSV
           </a>
+          <button
+            onClick={() => setShowQuickAdd((s) => !s)}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface-muted"
+          >
+            + Quick Add
+          </button>
           <Link
             href="/scanner"
             className="rounded-lg bg-accent text-accent-foreground px-3 py-1.5 text-sm font-semibold"
@@ -107,6 +115,15 @@ export default function InventoryPage() {
 
       {importResult && (
         <div className="rounded-lg bg-accent/10 text-accent text-sm px-3 py-2">{importResult}</div>
+      )}
+
+      {showQuickAdd && (
+        <QuickAddForm
+          onDone={() => {
+            setShowQuickAdd(false);
+            load();
+          }}
+        />
       )}
 
       <div className="flex flex-wrap gap-2 items-center">
@@ -213,5 +230,78 @@ export default function InventoryPage() {
         <p className="text-xs text-muted">Categories on this page: {categories.join(", ")}</p>
       )}
     </div>
+  );
+}
+
+function QuickAddForm({ onDone }: { onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState(0);
+  const [condition, setCondition] = useState<string>(CONDITIONS[2]);
+  const [location, setLocation] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name) return;
+    setSubmitting(true);
+    try {
+      await apiFetch("/api/inventory", {
+        method: "POST",
+        body: { name, purchasePrice: purchasePrice || null, condition, location: location || null, status: "needs_photos" },
+      });
+      onDone();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-2xl border border-border bg-surface p-4 space-y-3">
+      <p className="text-xs text-muted">
+        Manually add an item without AI — works offline (add photos and generate a listing later from the item page).
+      </p>
+      <div className="grid sm:grid-cols-4 gap-3">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Item name"
+          className="sm:col-span-2 rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+        />
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted text-xs">$</span>
+          <input
+            type="number"
+            value={purchasePrice}
+            onChange={(e) => setPurchasePrice(Number(e.target.value) || 0)}
+            placeholder="Purchase price"
+            className="w-full rounded-lg border border-border bg-background pl-5 pr-2 py-1.5 text-sm"
+          />
+        </div>
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+        >
+          {CONDITIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+      <input
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder="Location (e.g. Shelf A1, Bin 4)"
+        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+      />
+      <button
+        type="submit"
+        disabled={submitting || !name}
+        className="rounded-lg bg-accent text-accent-foreground px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+      >
+        {submitting ? "Adding…" : "Add Item"}
+      </button>
+    </form>
   );
 }

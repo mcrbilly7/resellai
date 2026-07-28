@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { askAssistant } from "@/lib/ai";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { question } = (await request.json()) as { question?: string };
   if (!question) return NextResponse.json({ error: "question is required" }, { status: 400 });
 
   const [items, sold] = await Promise.all([
     prisma.inventoryItem.findMany({
+      where: { userId: session.id },
       select: { category: true, brand: true, status: true, profit: true, listingPrice: true, marketplaces: true },
     }),
     prisma.inventoryItem.findMany({
-      where: { status: "sold" },
+      where: { userId: session.id, status: "sold" },
       select: { profit: true, category: true, brand: true },
     }),
   ]);

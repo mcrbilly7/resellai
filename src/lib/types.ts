@@ -15,6 +15,8 @@ export interface InventoryItemDTO {
   conditionScore: number | null;
   conditionReason: string | null;
   aiConfidence: number | null;
+  authenticityRisk: string | null;
+  authenticityNotes: string | null;
   photos: string[];
   purchaseDate: string | null;
   purchasePrice: number | null;
@@ -38,6 +40,7 @@ export interface InventoryItemDTO {
   itemSpecifics: Record<string, string>;
   marketplaces: string[];
   marketplaceStatus: Record<string, string>;
+  marketplaceListings: Record<string, { listingId?: string; url?: string; error?: string }>;
   salePrice: number | null;
   platformFees: number | null;
   soldDate: string | null;

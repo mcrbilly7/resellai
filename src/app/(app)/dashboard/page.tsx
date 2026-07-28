@@ -1,26 +1,39 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 import { StatCard } from "@/components/StatCard";
 import { STATUS_LABELS } from "@/lib/marketplaces";
+import { computeRepricingSuggestions } from "@/lib/repricing";
 
 export default async function DashboardPage() {
-  const [active, listed, drafts, sold, activity, needsAttention] = await Promise.all([
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
+  const [active, listed, drafts, sold, activity, needsAttention, listedItems] = await Promise.all([
     prisma.inventoryItem.findMany({
-      where: { status: { notIn: ["sold", "archived"] } },
+      where: { userId: user.id, status: { notIn: ["sold", "archived"] } },
       select: { listingPrice: true, purchasePrice: true },
     }),
-    prisma.inventoryItem.count({ where: { status: "listed" } }),
-    prisma.inventoryItem.count({ where: { status: "draft" } }),
+    prisma.inventoryItem.count({ where: { userId: user.id, status: "listed" } }),
+    prisma.inventoryItem.count({ where: { userId: user.id, status: "draft" } }),
     prisma.inventoryItem.findMany({
-      where: { status: "sold" },
+      where: { userId: user.id, status: "sold" },
       select: { profit: true, daysListed: true },
     }),
-    prisma.activityLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.activityLog.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.inventoryItem.findMany({
-      where: { status: { in: ["needs_photos", "purchased"] } },
+      where: { userId: user.id, status: { in: ["needs_photos", "purchased"] } },
       orderBy: { createdAt: "asc" },
       take: 5,
       select: { id: true, name: true, status: true, createdAt: true },
+    }),
+    prisma.inventoryItem.findMany({
+      where: { userId: user.id, status: "listed" },
+      select: {
+        id: true, name: true, status: true, listingPrice: true, fastPrice: true, normalPrice: true,
+        maxPrice: true, pricingStrategy: true, createdAt: true,
+      },
     }),
   ]);
 
@@ -35,7 +48,12 @@ export default async function DashboardPage() {
       ? sold.reduce((sum, i) => sum + (i.daysListed ?? 0), 0) / itemsSold
       : 0;
 
-  const recommendations = buildRecommendations({ drafts, needsAttention: needsAttention.length });
+  const repricing = computeRepricingSuggestions(listedItems);
+  const recommendations = buildRecommendations({
+    drafts,
+    needsAttention: needsAttention.length,
+    stale: repricing.length,
+  });
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -117,14 +135,46 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {repricing.length > 0 && (
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">Repricing Suggestions</h2>
+            <Link href="/listings" className="text-xs text-accent hover:underline">
+              Manage in Listings →
+            </Link>
+          </div>
+          <ul className="space-y-2 text-sm">
+            {repricing.slice(0, 4).map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3">
+                <Link href={`/inventory/${r.id}`} className="hover:text-accent truncate">
+                  {r.name}
+                </Link>
+                <span className="text-xs text-muted shrink-0">
+                  ${r.listingPrice.toFixed(2)} → <span className="text-warning font-medium">${r.suggestedPrice.toFixed(2)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
 
-function buildRecommendations({ drafts, needsAttention }: { drafts: number; needsAttention: number }): string[] {
+function buildRecommendations({
+  drafts,
+  needsAttention,
+  stale,
+}: {
+  drafts: number;
+  needsAttention: number;
+  stale: number;
+}): string[] {
   const tips: string[] = [];
   if (drafts > 0) tips.push(`You have ${drafts} draft listing${drafts === 1 ? "" : "s"} waiting for approval.`);
   if (needsAttention > 0) tips.push(`${needsAttention} item${needsAttention === 1 ? "" : "s"} still need photos or processing.`);
+  if (stale > 0) tips.push(`${stale} listing${stale === 1 ? "" : "s"} have been sitting a while — see repricing suggestions below.`);
   if (tips.length === 0) tips.push("Scan a new item to keep your pipeline moving.");
   return tips;
 }

@@ -13,6 +13,10 @@
     "@prisma/client": "^6.19.3",
     "@types/papaparse": "^5.5.2",
     "@types/uuid": "^10.0.0",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.4",
     "next": "16.2.12",
     "papaparse": "^5.5.4",
     "prisma": "^6.19.3",
@@ -25,6 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

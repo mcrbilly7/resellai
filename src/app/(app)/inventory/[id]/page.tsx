@@ -7,6 +7,7 @@ import { InventoryItemDTO } from "@/lib/types";
 import { STATUS_PIPELINE, STATUS_LABELS, MARKETPLACES } from "@/lib/marketplaces";
 import { StatusBadge } from "@/components/StatusBadge";
 import { computeProfit } from "@/lib/profit";
+import { apiFetch } from "@/lib/offline";
 
 export default function InventoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
@@ -35,19 +36,19 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
 
   async function patch(body: Record<string, unknown>) {
     setSaving(true);
-    const res = await fetch(`/api/inventory/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const res = await apiFetch(`/api/inventory/${id}`, { method: "PATCH", body });
     const data = await res.json();
-    setItem(data.item);
+    if (data.queued) {
+      setItem((prev) => (prev ? { ...prev, ...body } as InventoryItemDTO : prev));
+    } else {
+      setItem(data.item);
+    }
     setSaving(false);
   }
 
   async function handleDelete() {
     if (!confirm(`Delete "${item?.name}"? This can't be undone.`)) return;
-    await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/inventory/${id}`, { method: "DELETE" });
     router.push("/inventory");
   }
 
@@ -86,6 +87,19 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
         <StatusBadge status={item.status} />
       </div>
 
+      {item.authenticityRisk && item.authenticityRisk !== "low" && (
+        <div
+          className={`rounded-xl px-3 py-2 text-sm ${
+            item.authenticityRisk === "high"
+              ? "bg-danger/10 text-danger border border-danger/30"
+              : "bg-warning/10 text-warning border border-warning/30"
+          }`}
+        >
+          <span className="font-semibold uppercase text-xs">{item.authenticityRisk} authenticity risk</span>
+          {item.authenticityNotes && <p className="mt-0.5">{item.authenticityNotes}</p>}
+        </div>
+      )}
+
       {item.photos.length > 0 && (
         <div className="flex gap-3 overflow-x-auto">
           {item.photos.map((src, i) => (
@@ -123,13 +137,34 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
           {item.marketplaces.length > 0 && (
             <div className="rounded-2xl border border-border bg-surface p-5">
               <h2 className="font-semibold mb-3">Marketplace Status</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {item.marketplaces.map((m) => {
                   const def = MARKETPLACES.find((x) => x.key === m);
+                  const listing = item.marketplaceListings[m];
+                  const status = item.marketplaceStatus[m] ?? "pending";
                   return (
-                    <span key={m} className="rounded-full bg-surface-muted px-3 py-1 text-xs">
-                      {def?.name ?? m}: {item.marketplaceStatus[m] ?? "pending"}
-                    </span>
+                    <div key={m} className="flex items-center justify-between text-sm">
+                      <span>{def?.name ?? m}</span>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className={
+                            status.startsWith("published")
+                              ? "text-success"
+                              : status === "error"
+                                ? "text-danger"
+                                : "text-muted"
+                          }
+                        >
+                          {status}
+                        </span>
+                        {listing?.url && (
+                          <a href={listing.url} target="_blank" rel="noreferrer" className="text-accent underline text-xs">
+                            view
+                          </a>
+                        )}
+                        {listing?.error && <span className="text-xs text-danger">({listing.error})</span>}
+                      </span>
+                    </div>
                   );
                 })}
               </div>

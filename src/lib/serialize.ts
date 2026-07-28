@@ -8,6 +8,10 @@ export function serializeItem(item: InventoryItem) {
     itemSpecifics: safeParse<Record<string, string>>(item.itemSpecifics, {}),
     marketplaces: safeParse<string[]>(item.marketplaces, []),
     marketplaceStatus: safeParse<Record<string, string>>(item.marketplaceStatus, {}),
+    marketplaceListings: safeParse<Record<string, { listingId?: string; url?: string; error?: string }>>(
+      item.marketplaceListings,
+      {}
+    ),
   };
 }
 

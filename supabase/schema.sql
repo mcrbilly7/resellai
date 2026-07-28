@@ -26,6 +26,8 @@ create table if not exists inventory_items (
   condition_score int,
   condition_reason text,
   ai_confidence int,
+  authenticity_risk text,
+  authenticity_notes text,
 
   photos jsonb not null default '[]',
 
@@ -55,6 +57,7 @@ create table if not exists inventory_items (
   item_specifics jsonb not null default '{}',
   marketplaces jsonb not null default '[]',
   marketplace_status jsonb not null default '{}',
+  marketplace_listings jsonb not null default '{}',
 
   sale_price numeric(10, 2),
   platform_fees numeric(10, 2),
@@ -104,11 +107,29 @@ create table if not exists chat_messages (
   created_at timestamptz not null default now()
 );
 
+-- Buyer inquiries/offers per listing, with AI-drafted reply support.
+create table if not exists buyer_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  item_id uuid not null references inventory_items (id) on delete cascade,
+  marketplace text not null,
+  buyer_name text not null,
+  body text not null,
+  kind text not null default 'question' check (kind in ('question', 'offer', 'complaint')),
+  offer_amount numeric(10, 2),
+  status text not null default 'open' check (status in ('open', 'replied', 'resolved')),
+  reply text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists buyer_messages_user_status_idx on buyer_messages (user_id, status);
+
 -- Row-level security: every table is scoped to the owning user.
 alter table inventory_items enable row level security;
 alter table activity_log enable row level security;
 alter table marketplace_connections enable row level security;
 alter table chat_messages enable row level security;
+alter table buyer_messages enable row level security;
 
 create policy "Users manage their own inventory" on inventory_items
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -120,6 +141,9 @@ create policy "Users manage their own marketplace connections" on marketplace_co
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "Users manage their own chat messages" on chat_messages
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "Users manage their own buyer messages" on buyer_messages
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Storage bucket for item photos (referenced by URL from inventory_items.photos).

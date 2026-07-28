@@ -2,22 +2,29 @@
 
 AI-powered product sourcing, valuation, inventory management, and
 multi-marketplace selling platform. Photograph an item, let AI identify it
-and price it, generate a marketplace-ready listing, approve it, and track
-inventory and profit.
+and price it, generate a marketplace-ready listing, approve it, publish it,
+and track inventory, buyer messages, and profit.
 
 This repo implements the **web MVP** of the full product vision described in
-the project brief. See [Scope & deviations](#scope--deviations) below for
-what's built vs. what's roadmap.
+the project brief, built as an installable, offline-capable, multi-user web
+app. See [Scope & deviations](#scope--deviations) for what's built vs. what's
+genuinely out of reach in this environment.
 
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript, Tailwind CSS v4)
-- **Prisma + SQLite** for local-first inventory storage (`prisma/schema.prisma`)
+- **Prisma + SQLite** for local-first, multi-user storage (`prisma/schema.prisma`)
+- **Cookie-based session auth** (`src/lib/auth.ts`) — bcrypt password hashes,
+  signed JWT session cookies, no third-party auth service required
 - **Anthropic API** (Claude, vision + tool use) for product identification,
-  condition grading, pricing research, listing copy, and the AI assistant —
-  with deterministic mock fallbacks so the app runs fully offline/without a
-  key
+  condition grading, authenticity risk, pricing research, listing copy,
+  buyer-message replies, receipt line-item extraction, tax summaries, and the
+  AI assistant — with deterministic mock fallbacks so the whole app runs
+  end-to-end without a key
 - **Recharts** for the analytics dashboard
+- A service worker + Web App Manifest make the app installable (Android,
+  desktop Chrome/Edge, iOS "Add to Home Screen") and usable offline for core
+  inventory edits (see [Offline support](#offline-support))
 - `supabase/schema.sql` — a parallel Postgres schema for the optional
   multi-device cloud-sync backend (not wired up yet, see Roadmap)
 
@@ -26,40 +33,84 @@ what's built vs. what's roadmap.
 ```bash
 npm install
 cp .env.example .env
+# generate a session secret and paste it into .env as AUTH_SECRET
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 npx prisma generate
 npx prisma db push   # creates prisma/dev.db
 npm run dev
 ```
 
-Open http://localhost:3000 — it redirects to `/dashboard`.
+Open http://localhost:3000 — it redirects to `/login`. Create an account,
+then you land on `/dashboard`.
+
+**If deploying behind HTTPS** (Vercel, a TLS-terminating reverse proxy),
+set `COOKIE_SECURE=true` so the session cookie is marked `Secure`. Leave it
+unset for local/plain-HTTP use — a `Secure` cookie served over plain HTTP is
+silently dropped by browsers and login will appear to loop back to the login
+page.
 
 ### Enabling real AI
 
-Without `ANTHROPIC_API_KEY` set, the AI Scanner, Listing Generator, and AI
-Assistant all run in **demo mode**: deterministic sample data stands in for
-model output so the entire scan → price → list → approve → sell flow still
-works end-to-end for local testing/demos. Set the key in `.env` and restart
-the dev server to switch on live vision-based identification and listing
-generation (see `src/lib/ai.ts`).
+Without `ANTHROPIC_API_KEY` set, the AI Scanner, Listing Generator, Receipt
+Scanner, Buyer Message drafts, Tax Summary, and AI Assistant all run in
+**demo mode**: deterministic sample data stands in for model output so the
+entire scan → price → list → approve → publish → sell flow still works
+end-to-end for local testing/demos. Set the key in `.env` and restart the
+dev server to switch on live vision-based identification and generation (see
+`src/lib/ai.ts`).
 
 ## Feature map
 
 | Spec area | Where it lives |
 | --- | --- |
-| Dashboard (stats, activity, AI recommendations) | `src/app/dashboard` |
-| Scan Item (photo upload, barcode field) | `src/components/PhotoUploader.tsx`, `src/app/scanner` |
-| AI product identification + condition grading | `src/lib/ai.ts` (`identifyProduct`), `/api/analyze` |
+| Multi-user accounts | `src/lib/auth.ts`, `/api/auth/*`, `src/app/login`, `src/app/register` |
+| Dashboard (stats, activity, AI recommendations, repricing) | `src/app/(app)/dashboard` |
+| Scan Item (photo upload, camera barcode scan, voice notes) | `src/components/PhotoUploader.tsx`, `BarcodeScanner.tsx`, `VoiceInputButton.tsx`, `src/app/(app)/scanner` |
+| AI product identification + condition + authenticity risk | `src/lib/ai.ts` (`identifyProduct`), `/api/analyze` |
 | Pricing engine (Fast / Normal / Max tiers) | `src/lib/pricing.ts` |
 | Profit calculator (fees, ROI, margin) | `src/lib/profit.ts`, `src/components/ProfitCalculator.tsx` |
 | Listing generator (title/description/keywords/specifics) | `src/lib/ai.ts` (`generateListing`), `/api/listings/generate` |
-| Approval flow (edit/approve/reject) | `src/app/scanner`, `src/app/listings` |
-| Marketplace connections + cross-posting | `src/app/marketplace`, `src/lib/marketplaces.ts` (fee data + UI toggle; publishing is stubbed, see Roadmap) |
-| Inventory management (statuses, locations, SKU) | `src/app/inventory`, `prisma/schema.prisma` |
+| Approval flow (edit/approve/reject) | `src/app/(app)/scanner`, `src/app/(app)/listings` |
+| Marketplace publishing (adapter architecture) | `src/lib/marketplace-publishers/`, `/api/inventory/[id]/publish` — see below |
+| Automatic repricing suggestions | `src/lib/repricing.ts`, surfaced on Dashboard + Listings |
+| Buyer messages + AI negotiation replies | `src/app/(app)/messages`, `/api/messages/*`, `draftBuyerReply` in `src/lib/ai.ts` |
+| Receipt scanning → bulk inventory import | `src/app/(app)/receipts`, `/api/receipts/scan`, `extractReceiptItems` in `src/lib/ai.ts` |
+| Tax preparation assistant | Settings page, `/api/tax-summary`, `generateTaxSummary` in `src/lib/ai.ts` |
+| Inventory management (statuses, locations, SKU) | `src/app/(app)/inventory`, `prisma/schema.prisma` |
 | CSV import / export (inventory, sales, tax) | `/api/inventory/import`, `/api/inventory/export` |
-| Duplicate detection | Barcode/SKU uniqueness enforced on create + import |
-| Analytics dashboard | `src/app/analytics`, `/api/analytics` |
+| Duplicate detection | Barcode/SKU uniqueness enforced per-user on create + import |
+| Analytics dashboard + month-over-month trend | `src/app/(app)/analytics`, `/api/analytics` |
 | AI Assistant chat | `src/components/AIChatWidget.tsx`, `/api/assistant` |
 | Dark / light theme | `src/components/ThemeProvider.tsx` |
+| Installable PWA + offline queue | `src/app/manifest.ts`, `public/sw.js`, `src/lib/offline.ts` — see below |
+| Sourcing (supplier/wholesale/auction) | `src/app/(app)/sourcing` — honest placeholder, see Scope & deviations |
+
+### Marketplace publishing
+
+`src/lib/marketplace-publishers/` defines a `MarketplacePublisher` interface
+(`publish`, `unpublish`). Every marketplace defaults to a **mock adapter**
+(`mock.ts`) that always succeeds and returns a fake listing ID/URL, so
+Approve & Publish works end-to-end without any credentials. There's also a
+structurally-complete **eBay Sell API adapter** (`ebay.ts`, OAuth refresh
+token → inventory_item → offer → publish) written from the documented API
+shape — but this sandbox has no network access to `api.ebay.com`, so it has
+never actually been run against eBay. It only activates when
+`EBAY_CLIENT_ID`/`EBAY_CLIENT_SECRET`/`EBAY_REFRESH_TOKEN` are set, and
+should be treated as an unverified starting point, not a tested integration.
+
+### Offline support
+
+A service worker (`public/sw.js`) is network-first for pages and API GETs,
+falling back to cache only when a request genuinely fails — this matters
+because every page depends on an auth cookie the service worker can't see
+ahead of time, so cache-first would risk permanently replaying a stale
+pre-login redirect. Inventory mutations (add/edit/delete) go through
+`apiFetch()` (`src/lib/offline.ts`): online, it's a normal `fetch`; offline,
+it queues the mutation in IndexedDB and replays the queue in order once the
+browser fires the `online` event. This covers the spec's "view inventory,
+add items, edit listings, track purchases" offline bullets — AI-dependent
+endpoints (analyze, generate listing, assistant, receipts, tax summary)
+inherently need a live model call and stay online-only.
 
 ## Scope & deviations
 
@@ -69,48 +120,62 @@ network path to install one (npm/pypi registries were reachable, generic
 package downloads were not), so shipping working Flutter code wasn't
 possible without it going completely unverified. Given that constraint, this
 was built as a **Next.js web app** instead — fully runnable, build-checked,
-and manually tested end-to-end (see commit history / PR for the verification
-steps).
+and manually tested end-to-end with a real browser (Playwright), including
+registering an account, running the full scan → publish flow, going offline
+mid-session and confirming the mutation queue syncs correctly on reconnect.
 
-Not built in this pass, left as follow-up work:
+Not built, and deliberately not faked:
 
-- **Native mobile/desktop apps.** The Flutter clients, or a React
-  Native/Tauri equivalent, would consume the same API routes this repo
-  already exposes (`/api/inventory`, `/api/analyze`, `/api/listings/generate`,
-  `/api/analytics`).
-- **Offline-first sync.** Today the app is local-first via SQLite with no
-  network dependency for core CRUD. A true offline-mode-with-sync (per spec)
-  needs the client-side data layer a native app provides; `supabase/schema.sql`
-  is the target shape for the cloud side of that sync.
-- **Real marketplace publishing.** eBay/Amazon/Facebook/Mercari/etc. are
-  modeled as connection toggles and per-item marketplace status, but actual
-  OAuth + listing-publish API calls aren't implemented — each marketplace
-  has its own auth flow and category-mapping requirements that are a
-  significant integration project per marketplace.
-- **Multi-user accounts / auth.** The app is currently single-tenant (no
-  login). `supabase/schema.sql` includes `user_id` + RLS policies for when
-  auth is added.
-- **Barcode camera scanning.** The scanner accepts a typed/pasted barcode
-  today; live camera barcode decoding (e.g. via a WASM barcode reader) is a
-  follow-up.
-- Voice listing creation, live camera scanning, counterfeit detection,
-  auto-repricing, and the other "Future Features" from the brief are out of
-  scope for this pass.
+- **Native mobile/desktop apps.** The installable PWA (manifest + service
+  worker) covers "runs on a phone/desktop home screen" to the extent this
+  environment can build and verify; true native Flutter/React Native/Tauri
+  clients would consume the same API routes this repo already exposes.
+- **Real marketplace publishing.** The eBay adapter is written but unverified
+  (see above); Amazon/Facebook/Mercari/Poshmark/Etsy/Depop/OfferUp/Shopify/
+  WooCommerce all use the mock adapter. Each has its own OAuth flow and
+  category-mapping requirements — a real integration per marketplace is
+  follow-up work, and the adapter interface is designed so adding one is a
+  self-contained new file in `src/lib/marketplace-publishers/`.
+- **Supplier sourcing, wholesale finder, auction monitoring.** These need
+  live data from real supplier/wholesale/auction platforms that this sandbox
+  has no network access to and no legitimate data to fabricate. `/sourcing`
+  says so directly instead of showing invented "recommendations."
+- Camera barcode scanning, voice dictation, receipt scanning, buyer-message
+  AI replies, counterfeit-risk flagging, auto-repricing suggestions, and a
+  tax-prep assistant — all listed as "Future Features" in the brief — **are**
+  built; see the feature map above.
 
 ## Data model
 
-`prisma/schema.prisma` is the source of truth locally. Key model:
-`InventoryItem` carries identification, condition grading, pricing-engine
-output, listing content, marketplace status, and sale/profit fields in one
-row — see the file for the full field list and `ActivityLog` /
-`MarketplaceConnection` / `ChatMessage` for the supporting tables.
+`prisma/schema.prisma` is the source of truth locally. `User` owns every
+other row (`InventoryItem`, `ActivityLog`, `MarketplaceConnection`,
+`ChatMessage`, `BuyerMessage`) via `userId`, enforced in every API route.
+`InventoryItem` carries identification, condition grading, authenticity
+risk, pricing-engine output, listing content, marketplace publish status,
+and sale/profit fields in one row — see the file for the full field list.
+
+## Known limitations
+
+- A cosmetic React hydration console warning (`error #418`) can appear in
+  the production build after a full page navigation once the service worker
+  is active; it doesn't reproduce in `next dev` and doesn't affect any
+  functionality (verified via full end-to-end Playwright runs). Flagged here
+  rather than silently left in.
+- The session-cookie auth guard in `proxy.ts` is intentionally an
+  *optimistic* check (cookie presence only, no signature verification) —
+  Next's own guidance is that Proxy/Middleware shouldn't be the sole
+  authorization layer, and in practice this proxy runtime doesn't reliably
+  see `process.env.AUTH_SECRET`. Real enforcement (full JWT verification)
+  happens in every API route via `requireSessionUser()` and in the
+  `/dashboard` Server Component via `getSessionUser()`.
 
 ## Scripts
 
 ```bash
-npm run dev       # dev server
-npm run build     # production build (also runs the TypeScript check)
-npm run start     # run a production build
-npx eslint .       # lint
-npx prisma studio  # browse the local database
+npm run dev        # dev server
+npm run build      # production build (also runs the TypeScript check)
+npm run start      # run a production build
+npx eslint .        # lint
+npx prisma studio   # browse the local database
+node scripts/gen-icons.mjs   # regenerate public/icons/*.png (no image deps needed)
 ```

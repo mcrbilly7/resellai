@@ -7,11 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  inventoryItems         InventoryItem[]
+  activityLogs           ActivityLog[]
+  marketplaceConnections MarketplaceConnection[]
+  chatMessages           ChatMessage[]
+  buyerMessages          BuyerMessage[]
+}
+
 // Local-first inventory record. Mirrors supabase/schema.sql for the
 // optional Postgres cloud-sync backend described in the product spec.
 model InventoryItem {
   id       String  @id @default(cuid())
-  sku      String  @unique
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sku      String
   barcode  String?
 
   // Identification
@@ -30,6 +46,10 @@ model InventoryItem {
   conditionScore  Int?
   conditionReason String?
   aiConfidence    Int?
+
+  // Authenticity / counterfeit risk
+  authenticityRisk  String?
+  authenticityNotes String?
 
   // Photos: JSON array of data URLs / storage paths, ranked best-first
   photos String @default("[]")
@@ -63,6 +83,7 @@ model InventoryItem {
   itemSpecifics  String  @default("{}")
   marketplaces   String  @default("[]")
   marketplaceStatus String @default("{}")
+  marketplaceListings String @default("{}")
 
   // Sale tracking
   salePrice   Float?
@@ -76,30 +97,67 @@ model InventoryItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([status])
-  @@index([category])
-  @@index([brand])
+  buyerMessages BuyerMessage[]
+
+  @@unique([userId, sku])
+  @@index([userId, status])
+  @@index([userId, category])
+  @@index([userId, brand])
 }
 
 model ActivityLog {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   message   String
   type      String   @default("info")
   itemId    String?
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model MarketplaceConnection {
   id        String   @id @default(cuid())
-  name      String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
   connected Boolean  @default(false)
   feePercent Float   @default(0)
+  // Real credentials would be stored encrypted (e.g. via a KMS-backed vault)
+  // and referenced here, never stored in plaintext.
+  credentialsRef String?
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
 }
 
 model ChatMessage {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      String
   content   String
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Buyer inquiries/offers per listing, with AI-drafted reply support.
+model BuyerMessage {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  marketplace String
+  buyerName   String
+  body        String
+  kind        String  @default("question") // question, offer, complaint
+  offerAmount Float?
+  status      String  @default("open") // open, replied, resolved
+  reply       String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, status])
 }

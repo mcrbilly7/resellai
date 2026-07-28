@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 const COLUMNS = [
   "sku", "barcode", "name", "brand", "category", "condition", "status", "location",
@@ -8,10 +9,16 @@ const COLUMNS = [
 ] as const;
 
 export async function GET(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { searchParams } = new URL(request.url);
   const kind = searchParams.get("kind") ?? "inventory";
 
-  const items = await prisma.inventoryItem.findMany({ orderBy: { createdAt: "desc" } });
+  const items = await prisma.inventoryItem.findMany({
+    where: { userId: session.id },
+    orderBy: { createdAt: "desc" },
+  });
 
   if (kind === "sales") {
     const sold = items.filter((i) => i.status === "sold");

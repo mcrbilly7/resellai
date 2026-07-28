@@ -25,6 +25,18 @@ interface AnalyticsData {
   byCategory: { name: string; value: number }[];
   bestMarketplace: { name: string; count: number } | null;
   monthlySeries: { month: string; revenue: number; profit: number }[];
+  trend: { revenuePct: number; profitPct: number; currentMonth: string; previousMonth: string } | null;
+}
+
+function TrendBadge({ pct }: { pct: number }) {
+  if (pct === 0) return <span className="text-muted"> flat vs last month</span>;
+  const up = pct > 0;
+  return (
+    <span className={up ? "text-success" : "text-danger"}>
+      {" "}
+      {up ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}% vs last month
+    </span>
+  );
 }
 
 export default function AnalyticsPage() {
@@ -44,6 +56,13 @@ export default function AnalyticsPage() {
         <h1 className="text-xl font-semibold">Analytics</h1>
         <p className="text-sm text-muted">Sales performance across your whole business.</p>
       </div>
+
+      {data.trend && (
+        <p className="text-xs text-muted">
+          {data.trend.currentMonth} vs {data.trend.previousMonth}: revenue<TrendBadge pct={data.trend.revenuePct} />,
+          profit<TrendBadge pct={data.trend.profitPct} />
+        </p>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Revenue" value={`$${data.revenue.toFixed(2)}`} />

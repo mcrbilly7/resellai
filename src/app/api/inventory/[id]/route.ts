@@ -3,27 +3,34 @@ import { prisma } from "@/lib/prisma";
 import { serializeItem } from "@/lib/serialize";
 import { computeProfit } from "@/lib/profit";
 import { feeForMarketplace } from "@/lib/marketplaces";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { id } = await params;
   const item = await prisma.inventoryItem.findUnique({ where: { id } });
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!item || item.userId !== session.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ item: serializeItem(item) });
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { id } = await params;
   const body = await request.json();
   const existing = await prisma.inventoryItem.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing || existing.userId !== session.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const data: Record<string, unknown> = {};
   const scalarFields = [
     "barcode", "name", "brand", "model", "category", "color", "size", "material", "year", "rarity",
-    "condition", "conditionScore", "conditionReason", "aiConfidence", "purchasePrice",
-    "shippingCostEstimate", "packagingCost", "location", "status", "msrp", "currentRetail",
+    "condition", "conditionScore", "conditionReason", "aiConfidence", "authenticityRisk", "authenticityNotes",
+    "purchasePrice", "shippingCostEstimate", "packagingCost", "location", "status", "msrp", "currentRetail",
     "avgSoldPrice", "lowestActive", "highestSoldPrice", "fastPrice", "normalPrice", "maxPrice",
     "listingPrice", "pricingStrategy", "title", "description", "salePrice", "platformFees",
     "daysListed", "profit", "roi", "profitMargin",
@@ -31,7 +38,7 @@ export async function PATCH(request: Request, { params }: Params) {
   for (const field of scalarFields) {
     if (field in body) data[field] = body[field];
   }
-  const jsonFields = ["photos", "keywords", "itemSpecifics", "marketplaces", "marketplaceStatus"];
+  const jsonFields = ["photos", "keywords", "itemSpecifics", "marketplaces", "marketplaceStatus", "marketplaceListings"];
   for (const field of jsonFields) {
     if (field in body) data[field] = JSON.stringify(body[field]);
   }
@@ -74,6 +81,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.status && body.status !== existing.status) {
     await prisma.activityLog.create({
       data: {
+        userId: session.id,
         message: `"${item.name}" moved to ${body.status.replace("_", " ")}`,
         type: "status",
         itemId: item.id,
@@ -85,12 +93,15 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { id } = await params;
   const existing = await prisma.inventoryItem.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing || existing.userId !== session.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.inventoryItem.delete({ where: { id } });
   await prisma.activityLog.create({
-    data: { message: `Deleted "${existing.name}" (${existing.sku})`, type: "inventory" },
+    data: { userId: session.id, message: `Deleted "${existing.name}" (${existing.sku})`, type: "inventory" },
   });
   return NextResponse.json({ ok: true });
 }

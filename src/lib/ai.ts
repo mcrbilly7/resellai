@@ -25,6 +25,8 @@ export interface ItemAnalysis {
   conditionScore: number;
   conditionReason: string;
   aiConfidence: number;
+  authenticityRisk: "low" | "medium" | "high";
+  authenticityNotes: string;
   msrp: number;
   currentRetail: number;
   avgSoldPrice: number;
@@ -61,6 +63,15 @@ const analysisTool: Anthropic.Tool = {
       conditionScore: { type: "integer", description: "0-100 condition score" },
       conditionReason: { type: "string", description: "One sentence explaining the condition score" },
       aiConfidence: { type: "integer", description: "0-100 confidence in this identification" },
+      authenticityRisk: {
+        type: "string",
+        description:
+          "Counterfeit risk assessment from visible details (logos, stitching, materials, packaging): low, medium, or high. Use 'low' when there's nothing suspicious.",
+      },
+      authenticityNotes: {
+        type: "string",
+        description: "One sentence explaining the authenticity risk rating, or 'No concerns noted.' if low.",
+      },
       msrp: { type: "number" },
       currentRetail: { type: "number" },
       avgSoldPrice: { type: "number" },
@@ -75,6 +86,8 @@ const analysisTool: Anthropic.Tool = {
       "conditionScore",
       "conditionReason",
       "aiConfidence",
+      "authenticityRisk",
+      "authenticityNotes",
       "msrp",
       "currentRetail",
       "avgSoldPrice",
@@ -138,6 +151,8 @@ export async function identifyProduct(
     conditionScore: Number(input.conditionScore ?? 70),
     conditionReason: String(input.conditionReason ?? ""),
     aiConfidence: Number(input.aiConfidence ?? 60),
+    authenticityRisk: (input.authenticityRisk as ItemAnalysis["authenticityRisk"]) ?? "low",
+    authenticityNotes: String(input.authenticityNotes ?? "No concerns noted."),
     msrp: Number(input.msrp ?? 0),
     currentRetail: Number(input.currentRetail ?? 0),
     avgSoldPrice: Number(input.avgSoldPrice ?? 0),
@@ -221,6 +236,145 @@ export async function generateListing(item: {
   };
 }
 
+export async function draftBuyerReply(params: {
+  itemName: string;
+  listingPrice: number;
+  buyerName: string;
+  buyerMessage: string;
+  kind: string;
+  offerAmount?: number | null;
+}): Promise<string> {
+  const client = getClient();
+  if (!client) return mockBuyerReply(params);
+
+  const message = await client.messages.create({
+    model: MODEL,
+    max_tokens: 400,
+    system:
+      "You are a professional, friendly reseller replying to a marketplace buyer message. Be concise (2-4 sentences), " +
+      "protect the seller's margin on offers, and never promise anything outside the platform's normal terms.",
+    messages: [
+      {
+        role: "user",
+        content: `Item: ${params.itemName} (listed at $${params.listingPrice.toFixed(2)})\nBuyer ${params.buyerName} sent a ${params.kind}${
+          params.offerAmount != null ? ` of $${params.offerAmount.toFixed(2)}` : ""
+        }:\n"${params.buyerMessage}"\n\nDraft a reply.`,
+      },
+    ],
+  });
+
+  const text = message.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  return text?.text ?? mockBuyerReply(params);
+}
+
+const receiptTool: Anthropic.Tool = {
+  name: "record_receipt_items",
+  description: "Record line items extracted from a photographed purchase receipt.",
+  input_schema: {
+    type: "object",
+    properties: {
+      storeName: { type: "string" },
+      purchaseDate: { type: "string", description: "YYYY-MM-DD if visible, else empty string" },
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            price: { type: "number" },
+            quantity: { type: "integer" },
+          },
+          required: ["name", "price"],
+        },
+      },
+    },
+    required: ["items"],
+  },
+};
+
+export interface ReceiptExtraction {
+  storeName: string | null;
+  purchaseDate: string | null;
+  items: { name: string; price: number; quantity: number }[];
+  mocked: boolean;
+}
+
+export async function extractReceiptItems(images: string[]): Promise<ReceiptExtraction> {
+  const client = getClient();
+  if (!client) return mockReceipt();
+
+  const imageBlocks: Anthropic.ImageBlockParam[] = images.slice(0, 3).map((dataUrl) => {
+    const match = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(dataUrl);
+    if (!match) throw new Error("Expected a base64 data URL image");
+    return {
+      type: "image",
+      source: { type: "base64", media_type: match[1] as Anthropic.Base64ImageSource["media_type"], data: match[2] },
+    };
+  });
+
+  const message = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    tools: [receiptTool],
+    tool_choice: { type: "tool", name: "record_receipt_items" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...imageBlocks,
+          { type: "text", text: "Extract every purchased line item and its price from this receipt photo, then call record_receipt_items." },
+        ],
+      },
+    ],
+  });
+
+  const toolUse = message.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
+  if (!toolUse) return mockReceipt();
+
+  const input = toolUse.input as Record<string, unknown>;
+  const items = Array.isArray(input.items) ? (input.items as Record<string, unknown>[]) : [];
+  return {
+    storeName: (input.storeName as string) || null,
+    purchaseDate: (input.purchaseDate as string) || null,
+    items: items.map((it) => ({
+      name: String(it.name ?? "Item"),
+      price: Number(it.price ?? 0),
+      quantity: Number(it.quantity ?? 1) || 1,
+    })),
+    mocked: false,
+  };
+}
+
+export async function generateTaxSummary(params: {
+  year: number;
+  grossSales: number;
+  costOfGoods: number;
+  fees: number;
+  shippingPackaging: number;
+  netProfit: number;
+  itemCount: number;
+}): Promise<string> {
+  const client = getClient();
+  if (!client) return mockTaxSummary(params);
+
+  const message = await client.messages.create({
+    model: MODEL,
+    max_tokens: 500,
+    system:
+      "You are a tax-prep assistant for a small resale business, not a licensed accountant. Summarize the year's " +
+      "figures clearly, note this is an estimate to bring to a real tax preparer, and mention Schedule C-style categories in plain language.",
+    messages: [
+      {
+        role: "user",
+        content: `Summarize ${params.year} for this resale business:\n${JSON.stringify(params, null, 2)}`,
+      },
+    ],
+  });
+
+  const text = message.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  return text?.text ?? mockTaxSummary(params);
+}
+
 export async function askAssistant(question: string, context: string): Promise<string> {
   const client = getClient();
   if (!client) return mockAssistantReply(question, context);
@@ -242,7 +396,10 @@ export async function askAssistant(question: string, context: string): Promise<s
 // the full scan -> price -> list -> approve flow still works end-to-end.
 // ---------------------------------------------------------------------------
 
-const SAMPLE_ITEMS: Omit<ItemAnalysis, "mocked" | "aiConfidence" | "conditionScore" | "conditionReason" | "condition">[] = [
+const SAMPLE_ITEMS: Omit<
+  ItemAnalysis,
+  "mocked" | "aiConfidence" | "conditionScore" | "conditionReason" | "condition" | "authenticityRisk" | "authenticityNotes"
+>[] = [
   {
     name: "Apple MacBook Pro 14-inch M3 Pro",
     brand: "Apple",
@@ -334,6 +491,8 @@ function mockAnalysis(images: string[], hint?: { barcode?: string; note?: string
     conditionReason:
       "Demo mode (no ANTHROPIC_API_KEY set): minor surface wear detected from sample data, no visible damage.",
     aiConfidence: 55,
+    authenticityRisk: "low",
+    authenticityNotes: "Demo mode: no authenticity concerns flagged in sample data.",
     mocked: true,
   };
 }
@@ -386,4 +545,51 @@ function mockListing(item: {
 
 function mockAssistantReply(question: string, context: string): string {
   return `Demo mode (no ANTHROPIC_API_KEY configured): I'd normally answer "${question}" using your live inventory data. Here's what I can see right now:\n\n${context}\n\nSet ANTHROPIC_API_KEY to enable real AI-powered answers.`;
+}
+
+function mockBuyerReply(params: {
+  itemName: string;
+  listingPrice: number;
+  buyerName: string;
+  kind: string;
+  offerAmount?: number | null;
+}): string {
+  if (params.kind === "offer" && params.offerAmount != null) {
+    const counter = Math.round(((params.offerAmount + params.listingPrice) / 2) * 100) / 100;
+    return `Hi ${params.buyerName}, thanks for the offer! I can't quite do $${params.offerAmount.toFixed(2)}, but I could meet you at $${counter.toFixed(2)} — let me know if that works. (Demo mode: set ANTHROPIC_API_KEY for AI-drafted replies.)`;
+  }
+  return `Hi ${params.buyerName}, thanks for asking about the ${params.itemName}! It's still available at $${params.listingPrice.toFixed(2)} and ships within 1-2 business days. Let me know if you have any other questions. (Demo mode: set ANTHROPIC_API_KEY for AI-drafted replies.)`;
+}
+
+function mockReceipt(): ReceiptExtraction {
+  return {
+    storeName: "Demo Thrift Store",
+    purchaseDate: null,
+    items: [
+      { name: "Item 1 (demo mode — set ANTHROPIC_API_KEY to extract real receipts)", price: 12.99, quantity: 1 },
+      { name: "Item 2 (demo mode — set ANTHROPIC_API_KEY to extract real receipts)", price: 7.5, quantity: 1 },
+    ],
+    mocked: true,
+  };
+}
+
+function mockTaxSummary(params: {
+  year: number;
+  grossSales: number;
+  costOfGoods: number;
+  fees: number;
+  shippingPackaging: number;
+  netProfit: number;
+  itemCount: number;
+}): string {
+  return [
+    `Demo mode (no ANTHROPIC_API_KEY configured) — here's the raw ${params.year} numbers; set the key for a written AI summary:`,
+    `Items sold: ${params.itemCount}`,
+    `Gross sales: $${params.grossSales.toFixed(2)}`,
+    `Cost of goods sold: $${params.costOfGoods.toFixed(2)}`,
+    `Marketplace fees: $${params.fees.toFixed(2)}`,
+    `Shipping & packaging: $${params.shippingPackaging.toFixed(2)}`,
+    `Net profit: $${params.netProfit.toFixed(2)}`,
+    "This is an estimate for your own records — bring your CSV export (Settings → Data Export) to a licensed tax preparer for filing.",
+  ].join("\n");
 }

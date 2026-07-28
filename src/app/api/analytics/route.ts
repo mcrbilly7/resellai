@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MARKETPLACES } from "@/lib/marketplaces";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 export async function GET() {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const sold = await prisma.inventoryItem.findMany({
-    where: { status: "sold" },
+    where: { userId: session.id, status: "sold" },
     select: {
       salePrice: true,
       profit: true,
@@ -17,7 +21,7 @@ export async function GET() {
   });
 
   const active = await prisma.inventoryItem.findMany({
-    where: { status: { notIn: ["sold", "archived"] } },
+    where: { userId: session.id, status: { notIn: ["sold", "archived"] } },
     select: { listingPrice: true, purchasePrice: true },
   });
 
@@ -58,6 +62,8 @@ export async function GET() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, v]) => ({ month, ...v }));
 
+  const trend = monthOverMonthTrend(monthlySeries);
+
   return NextResponse.json({
     revenue,
     profit,
@@ -71,7 +77,21 @@ export async function GET() {
       ? { name: MARKETPLACES.find((m) => m.key === bestMarketplace[0])?.name ?? bestMarketplace[0], count: bestMarketplace[1] }
       : null,
     monthlySeries,
+    trend,
   });
+}
+
+function monthOverMonthTrend(series: { month: string; revenue: number; profit: number }[]) {
+  if (series.length < 2) return null;
+  const current = series[series.length - 1];
+  const previous = series[series.length - 2];
+  const pct = (curr: number, prev: number) => (prev !== 0 ? ((curr - prev) / prev) * 100 : curr > 0 ? 100 : 0);
+  return {
+    revenuePct: Math.round(pct(current.revenue, previous.revenue) * 10) / 10,
+    profitPct: Math.round(pct(current.profit, previous.profit) * 10) / 10,
+    currentMonth: current.month,
+    previousMonth: previous.month,
+  };
 }
 
 function aggregate<T>(rows: T[], key: (row: T) => string | null, value: (row: T) => number) {

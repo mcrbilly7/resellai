@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { identifyProduct } from "@/lib/ai";
 import { computePricingTiers } from "@/lib/pricing";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const body = (await request.json()) as { images?: string[]; barcode?: string; note?: string };
   const images = body.images ?? [];
   if (images.length === 0) {

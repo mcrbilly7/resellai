@@ -2,15 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { serializeItem } from "@/lib/serialize";
 import { generateSku } from "@/lib/sku";
+import { isSessionUser, requireSessionUser } from "@/lib/auth";
 import type { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const category = searchParams.get("category");
   const q = searchParams.get("q");
 
-  const where: Prisma.InventoryItemWhereInput = {};
+  const where: Prisma.InventoryItemWhereInput = { userId: session.id };
   if (status) where.status = status;
   if (category) where.category = category;
   if (q) {
@@ -27,12 +31,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!isSessionUser(session)) return session;
+
   const body = await request.json();
 
   const sku = body.sku || generateSku(body.category);
 
   const item = await prisma.inventoryItem.create({
     data: {
+      userId: session.id,
       sku,
       barcode: body.barcode || null,
       name: body.name,
@@ -48,6 +56,8 @@ export async function POST(request: Request) {
       conditionScore: body.conditionScore ?? null,
       conditionReason: body.conditionReason || null,
       aiConfidence: body.aiConfidence ?? null,
+      authenticityRisk: body.authenticityRisk || null,
+      authenticityNotes: body.authenticityNotes || null,
       photos: JSON.stringify(body.photos ?? []),
       purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
       purchasePrice: body.purchasePrice ?? null,
@@ -76,6 +86,7 @@ export async function POST(request: Request) {
 
   await prisma.activityLog.create({
     data: {
+      userId: session.id,
       message: `${item.status === "listed" ? "Listed" : "Saved"} "${item.name}" (${item.sku})`,
       type: item.status === "listed" ? "listing" : "inventory",
       itemId: item.id,
