@@ -19,6 +19,19 @@ model User {
   marketplaceConnections MarketplaceConnection[]
   chatMessages           ChatMessage[]
   buyerMessages          BuyerMessage[]
+  passwordResetTokens    PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Local-first inventory record. Mirrors supabase/schema.sql for the

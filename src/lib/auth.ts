@@ -1,10 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
 export const SESSION_COOKIE = "session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function secretKey() {
   const secret = process.env.AUTH_SECRET;
@@ -92,4 +94,20 @@ export async function requireSessionUser(): Promise<SessionUser | Response> {
 
 export function isSessionUser(value: SessionUser | Response): value is SessionUser {
   return !(value instanceof Response);
+}
+
+export async function createPasswordResetToken(userId: string): Promise<string> {
+  const token = randomBytes(32).toString("hex");
+  await prisma.passwordResetToken.create({
+    data: { userId, token, expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS) },
+  });
+  return token;
+}
+
+/** Validates and consumes a reset token, returning the associated userId, or null if invalid/expired/used. */
+export async function consumePasswordResetToken(token: string): Promise<string | null> {
+  const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!record || record.usedAt || record.expiresAt < new Date()) return null;
+  await prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+  return record.userId;
 }

@@ -13,7 +13,9 @@ genuinely out of reach in this environment.
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript, Tailwind CSS v4)
-- **Prisma + SQLite** for local-first, multi-user storage (`prisma/schema.prisma`)
+- **Prisma**, backed by a local SQLite file for development and, optionally,
+  **Turso** (hosted, SQLite-compatible libSQL) for deployments with no
+  persistent disk like Vercel — see [Deploying](#deploying) (`prisma/schema.prisma`)
 - **Cookie-based session auth** (`src/lib/auth.ts`) — bcrypt password hashes,
   signed JWT session cookies, no third-party auth service required
 - **Anthropic API** (Claude, vision + tool use) for product identification,
@@ -21,12 +23,16 @@ genuinely out of reach in this environment.
   buyer-message replies, receipt line-item extraction, tax summaries, and the
   AI assistant — with deterministic mock fallbacks so the whole app runs
   end-to-end without a key
+- **Automated email** (`src/lib/email.ts`) — welcome, password reset,
+  item-sold, and buyer-message alerts sent via your own Gmail account over
+  SMTP (an App Password, not your real password); logs to the console
+  instead of sending when not configured, so the app still works without it
 - **Recharts** for the analytics dashboard
 - A service worker + Web App Manifest make the app installable (Android,
   desktop Chrome/Edge, iOS "Add to Home Screen") and usable offline for core
   inventory edits (see [Offline support](#offline-support))
-- `supabase/schema.sql` — a parallel Postgres schema for the optional
-  multi-device cloud-sync backend (not wired up yet, see Roadmap)
+- `supabase/schema.sql` — a parallel Postgres schema for an alternative
+  multi-device cloud-sync backend (not wired up, see Roadmap)
 
 ## Getting started
 
@@ -59,11 +65,32 @@ end-to-end for local testing/demos. Set the key in `.env` and restart the
 dev server to switch on live vision-based identification and generation (see
 `src/lib/ai.ts`).
 
+### Enabling automated email
+
+Without `GMAIL_USER`/`GMAIL_APP_PASSWORD` set, emails are logged to the
+server console instead of sent (verified via a real end-to-end run — see the
+`[email disabled] Would send "..."` lines). To send for real, from your own
+Gmail account, no third-party service:
+
+1. Turn on 2-Step Verification on the Google account you want to send from
+   (required before Google will issue App Passwords).
+2. Generate one at https://myaccount.google.com/apppasswords — it's a
+   16-character code, distinct from and revocable separately from your real
+   password.
+3. Set `GMAIL_USER` (the Gmail address) and `GMAIL_APP_PASSWORD` (the
+   generated code) in `.env`, plus `APP_URL` (your deployed URL, or
+   `http://localhost:3000` for local dev) so password-reset links point
+   somewhere real.
+
+Triggers: welcome email on signup, password-reset link, item-sold summary,
+and buyer-message alerts — all in `src/lib/email.ts`.
+
 ## Feature map
 
 | Spec area | Where it lives |
 | --- | --- |
-| Multi-user accounts | `src/lib/auth.ts`, `/api/auth/*`, `src/app/login`, `src/app/register` |
+| Multi-user accounts + password reset | `src/lib/auth.ts`, `/api/auth/*`, `src/app/login`, `src/app/register`, `src/app/forgot-password`, `src/app/reset-password` |
+| Automated email (welcome, reset, item-sold, buyer-message alerts) | `src/lib/email.ts` — see [Enabling automated email](#enabling-automated-email) |
 | Dashboard (stats, activity, AI recommendations, repricing) | `src/app/(app)/dashboard` |
 | Scan Item (photo upload, camera barcode scan, voice notes) | `src/components/PhotoUploader.tsx`, `BarcodeScanner.tsx`, `VoiceInputButton.tsx`, `src/app/(app)/scanner` |
 | AI product identification + condition + authenticity risk | `src/lib/ai.ts` (`identifyProduct`), `/api/analyze` |
@@ -112,6 +139,32 @@ add items, edit listings, track purchases" offline bullets — AI-dependent
 endpoints (analyze, generate listing, assistant, receipts, tax summary)
 inherently need a live model call and stay online-only.
 
+## Deploying
+
+To Vercel (or any host with no persistent local disk):
+
+1. **Database:** create a free database at https://turso.tech, then set
+   `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in your host's environment
+   variables. `src/lib/prisma.ts` automatically switches to it — a plain
+   local SQLite file (`DATABASE_URL`) only works for local dev, since
+   serverless functions don't keep a persistent filesystem between requests.
+   Apply the schema against Turso once before first deploy:
+   ```bash
+   DATABASE_URL="<your TURSO_DATABASE_URL>?authToken=<your TURSO_AUTH_TOKEN>" npx prisma db push
+   ```
+2. **Auth:** set `AUTH_SECRET` (see [Getting started](#getting-started)) and
+   `COOKIE_SECURE=true` (required once served over HTTPS, which Vercel
+   always does — see the cookie note above).
+3. **AI / email (optional):** set `ANTHROPIC_API_KEY` and/or
+   `GMAIL_USER`/`GMAIL_APP_PASSWORD`/`APP_URL` — both degrade gracefully
+   (demo data / console-logged emails) when unset, so the app deploys and
+   runs without them too.
+
+None of this was testable end-to-end from this sandbox (no network access to
+Turso or Gmail's SMTP servers here), so treat the Turso/Gmail wiring as
+built-and-reviewed, not verified against the real services — the local
+SQLite path and the console-log email fallback *are* verified.
+
 ## Scope & deviations
 
 The product brief specifies **Flutter** (Android/iOS/Web/Desktop) on a
@@ -149,7 +202,8 @@ Not built, and deliberately not faked:
 
 `prisma/schema.prisma` is the source of truth locally. `User` owns every
 other row (`InventoryItem`, `ActivityLog`, `MarketplaceConnection`,
-`ChatMessage`, `BuyerMessage`) via `userId`, enforced in every API route.
+`ChatMessage`, `BuyerMessage`, `PasswordResetToken`) via `userId`, enforced
+in every API route.
 `InventoryItem` carries identification, condition grading, authenticity
 risk, pricing-engine output, listing content, marketplace publish status,
 and sale/profit fields in one row — see the file for the full field list.

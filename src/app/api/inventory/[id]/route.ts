@@ -4,6 +4,7 @@ import { serializeItem } from "@/lib/serialize";
 import { computeProfit } from "@/lib/profit";
 import { feeForMarketplace } from "@/lib/marketplaces";
 import { isSessionUser, requireSessionUser } from "@/lib/auth";
+import { sendItemSoldEmail } from "@/lib/email";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -87,6 +88,12 @@ export async function PATCH(request: Request, { params }: Params) {
         itemId: item.id,
       },
     });
+
+    if (body.status === "sold" && item.salePrice != null) {
+      sendItemSoldEmail(session.email, { name: item.name, salePrice: item.salePrice, profit: item.profit }).catch(
+        () => {}
+      );
+    }
   }
 
   return NextResponse.json({ item: serializeItem(item) });

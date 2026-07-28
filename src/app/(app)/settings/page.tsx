@@ -17,6 +17,7 @@ interface TaxSummary {
 export default function SettingsPage() {
   const { theme, toggle } = useTheme();
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+  const [emailConfigured, setEmailConfigured] = useState<boolean | null>(null);
   const [taxYear, setTaxYear] = useState(new Date().getFullYear());
   const [taxSummary, setTaxSummary] = useState<TaxSummary | null>(null);
   const [loadingTax, setLoadingTax] = useState(false);
@@ -24,7 +25,10 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((d) => setAiConfigured(d.aiConfigured));
+      .then((d) => {
+        setAiConfigured(d.aiConfigured);
+        setEmailConfigured(d.emailConfigured);
+      });
   }, []);
 
   async function loadTaxSummary() {
@@ -67,6 +71,27 @@ export default function SettingsPage() {
           <div className="text-sm text-warning space-y-1">
             <p>No ANTHROPIC_API_KEY set. The AI Scanner, Listing Generator, and Assistant are running in demo mode with sample data.</p>
             <p className="text-muted">Set ANTHROPIC_API_KEY in your environment and restart the server to enable real AI analysis.</p>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+        <h2 className="font-semibold">Email Notifications</h2>
+        {emailConfigured === null ? (
+          <p className="text-sm text-muted">Checking…</p>
+        ) : emailConfigured ? (
+          <p className="text-sm text-success">
+            Sending from your own Gmail account — welcome, password reset, item-sold, and buyer-message emails are
+            live.
+          </p>
+        ) : (
+          <div className="text-sm text-warning space-y-1">
+            <p>No GMAIL_USER / GMAIL_APP_PASSWORD set. Emails are logged to the server console instead of sent.</p>
+            <p className="text-muted">
+              Generate a free Google App Password at{" "}
+              <span className="underline">myaccount.google.com/apppasswords</span> (requires 2-Step Verification),
+              then set both env vars and restart.
+            </p>
           </div>
         )}
       </section>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isSessionUser, requireSessionUser } from "@/lib/auth";
+import { sendBuyerMessageAlertEmail } from "@/lib/email";
 
 export async function GET(request: Request) {
   const session = await requireSessionUser();
@@ -60,6 +61,13 @@ export async function POST(request: Request) {
       offerAmount: body.offerAmount ?? null,
     },
   });
+
+  sendBuyerMessageAlertEmail(session.email, {
+    buyerName: message.buyerName,
+    itemName: item.title || item.name,
+    body: message.body,
+    kind: message.kind,
+  }).catch(() => {});
 
   return NextResponse.json({ message }, { status: 201 });
 }
