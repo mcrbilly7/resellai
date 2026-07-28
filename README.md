@@ -144,17 +144,27 @@ inherently need a live model call and stay online-only.
 To Vercel (or any host with no persistent local disk):
 
 1. **Database:** create a free database at https://turso.tech, then set
-   `DATABASE_URL` in your host's environment variables to its `libsql://`
-   connection string with the auth token appended as a query param:
-   ```
-   DATABASE_URL="libsql://your-db.turso.io?authToken=eyJhbGciOi..."
-   ```
-   `src/lib/prisma.ts` detects the `libsql://` scheme and routes through
-   Turso automatically — a plain local SQLite file only works for local dev,
-   since serverless functions don't keep a persistent filesystem between
-   requests. The schema syncs itself: `npm run build` runs `prisma db push`
-   before `next build` (see `package.json`), so every deploy applies any
-   schema changes to Turso automatically — no command to run yourself.
+   `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in your host's environment
+   variables — `src/lib/prisma.ts` detects `TURSO_DATABASE_URL` and routes
+   queries through Turso's driver adapter instead of the local file. Leave
+   `DATABASE_URL` set to `file:./dev.db` in every environment, including
+   production — **don't** repoint it at the `libsql://` URL. Prisma
+   validates that value against the `sqlite` provider's own protocol at
+   client runtime regardless of whether an adapter is in use, so anything
+   other than a `file:` URL there crashes every single query with `the URL
+   must start with the protocol file:` (this is not hypothetical — it's
+   exactly what happened when this was first deployed and is why the schema
+   is split across `DATABASE_URL` and `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`
+   instead of one variable).
+
+   Apply the schema to Turso once — there's no reliable way to run Prisma's
+   own migration commands against a remote `libsql://` URL without extra
+   `prisma.config.ts` CLI configuration, so `prisma/turso-init.sql` (the
+   exact SQL Prisma would run, generated via `prisma migrate diff
+   --from-empty`) is the schema instead. Paste its contents into the Turso
+   dashboard's SQL console, or run `turso db shell your-db <
+   prisma/turso-init.sql` if you have the CLI. Re-run it (or the equivalent
+   `ALTER TABLE`s) after any future schema change.
 2. **Auth:** set `AUTH_SECRET` (see [Getting started](#getting-started)) and
    `COOKIE_SECURE=true` (required once served over HTTPS, which Vercel
    always does — see the cookie note above).
@@ -164,11 +174,12 @@ To Vercel (or any host with no persistent local disk):
    runs without them too.
 
 None of this was testable end-to-end from this sandbox (no network access to
-Turso or Gmail's SMTP servers here), so treat the Turso/Gmail wiring as
-built-and-reviewed, not verified against the real services — the local
-SQLite path (including the `prisma db push`-on-build step, which really did
-run against the local file during verification) and the console-log email
-fallback *are* verified.
+Turso or Gmail's SMTP servers here — confirmed by pointing the app at a fake
+Turso URL locally and seeing the connection get refused at the network
+level, rather than a schema-validation error, which is what proved the fix
+above actually routes through the adapter correctly). Treat the Turso/Gmail
+wiring as built-and-reviewed, not verified against the real services — the
+local SQLite path and the console-log email fallback *are* verified.
 
 ## Scope & deviations
 

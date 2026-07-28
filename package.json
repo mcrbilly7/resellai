@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma db push --skip-generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
