@@ -22,19 +22,24 @@ function ResetPasswordForm() {
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Something went wrong.");
-      return;
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+      setDone(true);
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (err) {
+      setError("Couldn't reach the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setDone(true);
-    setTimeout(() => router.push("/login"), 2000);
   };
 
   if (!token) {

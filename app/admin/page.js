@@ -29,13 +29,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     (async () => {
-      const meRes = await fetch("/api/user/me");
-      if (meRes.status === 401) { router.push("/login"); return; }
-      const meData = await meRes.json();
-      if (!meData.isAdmin) { router.push("/settings"); return; }
-      setMe(meData);
-      await loadUsers();
-      setLoading(false);
+      try {
+        const meRes = await fetch("/api/user/me");
+        if (meRes.status === 401) { router.push("/login"); return; }
+        const meData = await meRes.json();
+        if (!meData.isAdmin) { router.push("/settings"); return; }
+        setMe(meData);
+        await loadUsers();
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [router]);
 

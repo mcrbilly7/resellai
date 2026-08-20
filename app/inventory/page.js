@@ -17,17 +17,20 @@ export default function InventoryPage() {
 
   useEffect(() => {
     (async () => {
-      const meRes = await fetch("/api/user/me");
-      if (meRes.status === 401) { router.push("/login"); return; }
-      const meData = await meRes.json();
-      setMe(meData);
+      try {
+        const meRes = await fetch("/api/user/me");
+        if (meRes.status === 401) { router.push("/login"); return; }
+        const meData = await meRes.json();
+        setMe(meData);
 
-      const accRes = await fetch("/api/team/accounts");
-      const accData = accRes.ok ? (await accRes.json()).accounts : [];
-      setAccounts(accData);
+        const accRes = await fetch("/api/team/accounts");
+        const accData = accRes.ok ? (await accRes.json()).accounts : [];
+        setAccounts(accData);
 
-      setOwnerId(meData.id); // default to viewing your own account
-      setLoading(false);
+        setOwnerId(meData.id); // default to viewing your own account
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [router]);
 

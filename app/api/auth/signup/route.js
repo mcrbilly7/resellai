@@ -17,15 +17,21 @@ export async function POST(req) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: "An account with that email already exists." }, { status: 400 });
-  }
+  let existing, user;
+  try {
+    existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: "An account with that email already exists." }, { status: 400 });
+    }
 
-  const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash, promoOptIn },
-  });
+    const passwordHash = await hashPassword(password);
+    user = await prisma.user.create({
+      data: { name, email, passwordHash, promoOptIn },
+    });
+  } catch (e) {
+    console.error("Signup DB error:", e);
+    return NextResponse.json({ error: "Server error. Please try again shortly." }, { status: 500 });
+  }
 
   const token = createSessionToken(user.id);
   setSessionCookie(token);

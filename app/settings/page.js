@@ -16,17 +16,19 @@ export default function SettingsPage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/user/me");
-      if (res.status === 401) { router.push("/login"); return; }
-      const data = await res.json();
-      setUser(data);
-      setName(data.name || "");
-      setPromoOptIn(data.promoOptIn);
+      try {
+        const res = await fetch("/api/user/me");
+        if (res.status === 401) { router.push("/login"); return; }
+        const data = await res.json();
+        setUser(data);
+        setName(data.name || "");
+        setPromoOptIn(data.promoOptIn);
 
-      const accRes = await fetch("/api/team/accounts");
-      if (accRes.ok) setWorkingFor((await accRes.json()).accounts);
-
-      setLoading(false);
+        const accRes = await fetch("/api/team/accounts");
+        if (accRes.ok) setWorkingFor((await accRes.json()).accounts);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [router]);
 

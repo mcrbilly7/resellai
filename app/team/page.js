@@ -117,11 +117,14 @@ export default function TeamPage() {
   const [adding, setAdding] = useState(false);
 
   const load = async () => {
-    const res = await fetch("/api/team/members");
-    if (res.status === 401) { router.push("/login"); return; }
-    const data = await res.json();
-    setMembers(data.members || []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/team/members");
+      if (res.status === 401) { router.push("/login"); return; }
+      const data = await res.json();
+      setMembers(data.members || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -130,16 +133,21 @@ export default function TeamPage() {
     e.preventDefault();
     setAddError("");
     setAdding(true);
-    const res = await fetch("/api/team/members", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    const data = await res.json();
-    setAdding(false);
-    if (!res.ok) { setAddError(data.error || "Couldn't add that worker."); return; }
-    setEmail(""); setRole("VIEWER");
-    load();
+    try {
+      const res = await fetch("/api/team/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setAddError(data.error || "Couldn't add that worker."); return; }
+      setEmail(""); setRole("VIEWER");
+      load();
+    } catch (err) {
+      setAddError("Couldn't reach the server. Please try again.");
+    } finally {
+      setAdding(false);
+    }
   };
 
   const updateMember = async (id, patch) => {

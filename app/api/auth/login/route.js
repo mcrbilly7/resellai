@@ -7,7 +7,13 @@ export async function POST(req) {
   const email = (body.email || "").trim().toLowerCase();
   const password = body.password || "";
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { email } });
+  } catch (e) {
+    console.error("Login DB error:", e);
+    return NextResponse.json({ error: "Server error. Please try again shortly." }, { status: 500 });
+  }
   if (!user) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }

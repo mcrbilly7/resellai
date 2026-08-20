@@ -11,13 +11,16 @@ export default function ForgotPasswordPage() {
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setLoading(false);
-    setSent(true);
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

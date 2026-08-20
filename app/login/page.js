@@ -15,18 +15,23 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Something went wrong.");
-      return;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+      router.push(data.mustChangePassword ? "/change-password" : data.isAdmin ? "/admin" : "/settings");
+    } catch (err) {
+      setError("Couldn't reach the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    router.push(data.mustChangePassword ? "/change-password" : data.isAdmin ? "/admin" : "/settings");
   };
 
   return (

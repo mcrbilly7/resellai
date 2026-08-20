@@ -15,11 +15,14 @@ export default function ChangePasswordPage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/user/me");
-      if (res.status === 401) { router.push("/login"); return; }
-      const data = await res.json();
-      setForced(!!data.mustChangePassword);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/user/me");
+        if (res.status === 401) { router.push("/login"); return; }
+        const data = await res.json();
+        setForced(!!data.mustChangePassword);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [router]);
 
@@ -28,15 +31,20 @@ export default function ChangePasswordPage() {
     setError("");
     if (newPassword !== confirm) { setError("New passwords don't match."); return; }
     setSaving(true);
-    const res = await fetch("/api/user/change-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    const data = await res.json();
-    setSaving(false);
-    if (!res.ok) { setError(data.error || "Something went wrong."); return; }
-    router.push("/settings");
+    try {
+      const res = await fetch("/api/user/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || "Something went wrong."); return; }
+      router.push("/settings");
+    } catch (err) {
+      setError("Couldn't reach the server. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div style={st.card}><p style={{ fontSize: 13, color: "#666C61" }}>Loading...</p></div>;
