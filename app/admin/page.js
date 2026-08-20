@@ -77,7 +77,7 @@ export default function AdminPage() {
     setSendStatus(res.ok ? `Sent to ${data.sent} of ${data.total} recipient(s)${data.failed ? ` (${data.failed} failed)` : ""}.` : data.error || "Couldn't send.");
   };
 
-  if (loading) return <div style={{ maxWidth: 900, margin: "60px auto", padding: 24 }}><p style={{ fontSize: 13, color: "#666C61" }}>Loading...</p></div>;
+  if (loading || !me) return <div style={{ maxWidth: 900, margin: "60px auto", padding: 24 }}><p style={{ fontSize: 13, color: "#666C61" }}>Loading...</p></div>;
 
   return (
     <div style={{ maxWidth: 960, margin: "40px auto", padding: 24 }}>

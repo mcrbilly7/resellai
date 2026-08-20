@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as st from "../../lib/styles";
@@ -10,9 +10,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError("");
     setLoading(true);
     try {
@@ -31,6 +34,7 @@ export default function LoginPage() {
       setError("Couldn't reach the server. Please try again.");
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 

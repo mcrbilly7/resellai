@@ -52,7 +52,7 @@ export default function SettingsPage() {
     router.push("/login");
   };
 
-  if (loading) return <div style={st.card}><p style={{ fontSize: 13, color: "#666C61" }}>Loading...</p></div>;
+  if (loading || !user) return <div style={st.card}><p style={{ fontSize: 13, color: "#666C61" }}>Loading...</p></div>;
 
   return (
     <div style={st.card}>

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as st from "../../lib/styles";
@@ -12,9 +12,15 @@ export default function SignupPage() {
   const [promoOptIn, setPromoOptIn] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
 
   const submit = async (e) => {
     e.preventDefault();
+    // useState-driven `disabled` doesn't take effect until the next render,
+    // so a fast double click/tap can fire this twice before the button
+    // visually disables. This ref blocks the second call synchronously.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError("");
     setLoading(true);
     try {
@@ -33,6 +39,7 @@ export default function SignupPage() {
       setError("Couldn't reach the server. Please try again.");
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
