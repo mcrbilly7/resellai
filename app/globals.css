@@ -1,0 +1,48 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  transition: color 0.15s ease;
+}
+
+button {
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, background 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(18, 145, 95, 0.22);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+input,
+textarea,
+select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #12915f !important;
+  box-shadow: 0 0 0 3px rgba(18, 145, 95, 0.14);
+}
+
+::selection {
+  background: rgba(18, 145, 95, 0.2);
+}
