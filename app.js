@@ -185,7 +185,8 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
     piece: piece,
     crew_link: base + "track.html" + hash,
     customer_link: base + "watch.html" + hash,
-    note: "Confirm this job first. Then text and/or email the CUSTOMER link only."
+    note: "Confirm this job first. Then text and/or email the CUSTOMER link only.",
+    _autoresponse: "Thank you for booking a route with Nossonk LLC. We received your request. We will confirm it and get back to you within 48 hours. After we confirm, we will send your private tracker the way you asked. Need us sooner? Call or text (945) 239-5974."
   };
   showBooked(sendvia, name);
   try {
