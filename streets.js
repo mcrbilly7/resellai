@@ -1,19 +1,28 @@
 function streetLayers() {
-  const streets = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
+  const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    maxZoom: 20,
+    subdomains: "abcd",
+    attribution: "&copy; OpenStreetMap &copy; CARTO"
   });
   const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
     maxZoom: 19,
     attribution: "Tiles &copy; Esri"
   });
-  return { streets: streets, satellite: satellite };
+  const labels = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png", {
+    maxZoom: 20,
+    subdomains: "abcd",
+    pane: "shadowPane"
+  });
+  return { streets: streets, satellite: satellite, labels: labels };
 }
 
 function makeStreetMap(el) {
   const layers = streetLayers();
-  const map = L.map(el, { zoomControl: true, layers: [layers.streets] }).setView([32.7767, -96.7970], 13);
-  L.control.layers({ Streets: layers.streets, Satellite: layers.satellite }).addTo(map);
+  const map = L.map(el, { zoomControl: true, layers: [layers.streets] }).setView([32.7767, -96.7970], 14);
+  L.control.layers({
+    Streets: layers.streets,
+    Satellite: L.layerGroup([layers.satellite, layers.labels])
+  }).addTo(map);
   return { map: map, line: null, here: null, markers: [] };
 }
 
