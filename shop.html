@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Confirm booking — Nossonk LLC</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="Nossonk LLC" /></a>
+    <span class="role">Shop only</span>
+  </header>
+  <section class="contact">
+    <div>
+      <p class="kicker">After a request</p>
+      <h1>Confirm, then send their tracker.</h1>
+      <p>Booking requests land in <a href="mailto:noskotx@gmail.com">noskotx@gmail.com</a>. Confirm the job with the customer first. Then send only the customer link the way they asked: text, email, or both. Keep the crew link on the walking phone.</p>
+    </div>
+    <form id="sendForm">
+      <label>Customer name <input id="n" required /></label>
+      <label>Customer phone <input id="p" type="tel" placeholder="9455550100" /></label>
+      <label>Customer email <input id="e" type="email" /></label>
+      <label>Customer tracker link <input id="link" required placeholder="https://mcrbilly7.github.io/resellai/watch.html#..." /></label>
+      <button class="btn navy" type="button" id="doText">Text the link</button>
+      <button class="btn" type="button" id="doEmail">Email the link</button>
+      <button class="btn" type="button" id="doBoth">Text and email</button>
+    </form>
+  </section>
+  <script>
+    function msg() {
+      const name = document.getElementById("n").value.trim() || "there";
+      const link = document.getElementById("link").value.trim();
+      return "Hi " + name + ", Nossonk LLC confirmed your route. Track it here: " + link;
+    }
+    document.getElementById("doText").onclick = () => {
+      const phone = document.getElementById("p").value.replace(/[^\d+]/g, "");
+      if (!phone) { alert("Need a phone number."); return; }
+      location.href = "sms:" + phone + "?&body=" + encodeURIComponent(msg());
+    };
+    document.getElementById("doEmail").onclick = () => {
+      const email = document.getElementById("e").value.trim();
+      if (!email) { alert("Need an email."); return; }
+      location.href = "mailto:" + email + "?subject=" + encodeURIComponent("Your Nossonk route tracker") + "&body=" + encodeURIComponent(msg());
+    };
+    document.getElementById("doBoth").onclick = () => {
+      document.getElementById("doEmail").click();
+      setTimeout(() => document.getElementById("doText").click(), 400);
+    };
+  </script>
+</body>
+</html>

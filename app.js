@@ -1,6 +1,5 @@
 const modal = document.getElementById("bookModal");
-let bookView = null;
-let cityLayer = null;
+let mapType = "h";
 const cityInput = document.getElementById("bookCity");
 const doorsInput = document.getElementById("bookDoors");
 const cityList = document.getElementById("cityList");
@@ -17,55 +16,14 @@ CITIES.forEach((c) => {
   cityList.appendChild(o);
 });
 
-function ensureBookMap() {
-  if (bookView) {
-    setTimeout(() => bookView.map.invalidateSize(), 200);
-    return bookView;
-  }
-  bookView = makeStreetMap("bookMap");
-  CITIES.forEach((c) => {
-    const mark = L.circleMarker([c.lat, c.lng], {
-      radius: c.name === "Dallas" ? 8 : 6,
-      color: "#fff",
-      weight: 1,
-      fillColor: c.name === "Dallas" ? "#0f2744" : "#c4a056",
-      fillOpacity: 1
-    }).addTo(bookView.map);
-    mark.bindTooltip(c.name);
-    mark.on("click", () => selectCity(c));
-  });
-  bookView.map.on("click", (e) => {
-    if (!drawing) return;
-    customPath.push([e.latlng.lat, e.latlng.lng]);
-    drawPath();
-    mapHint.textContent = customPath.length + " points on your route.";
-  });
-  setTimeout(() => bookView.map.invalidateSize(), 250);
-  return bookView;
-}
-
-function selectCity(c) {
-  selected = c;
-  cityInput.value = c.name;
-  drawing = false;
-  document.getElementById("drawBtn").classList.remove("on");
-  mapHint.textContent = c.name + " · streets and houses · about " + c.mins + " min from Dallas.";
-  if (bookView) bookView.map.setView([c.lat, c.lng], 16);
-  updatePrice();
-}
-
-function drawPath() {
-  if (!bookView) return;
-  if (bookView.line) bookView.map.removeLayer(bookView.line);
-  if (customPath.length) {
-    bookView.line = L.polyline(customPath, { color: "#0f2744", weight: 4 }).addTo(bookView.map);
-  }
+function mapSrc(city) {
+  const q = encodeURIComponent((city || "Dallas") + ", TX");
+  return "https://maps.google.com/maps?q=" + q + "&hl=en&z=15&t=" + mapType + "&output=embed";
 }
 
 function renderMap() {
-  ensureBookMap();
-  drawPath();
-  if (selected) bookView.map.setView([selected.lat, selected.lng], 16);
+  const frame = document.getElementById("bookMap");
+  if (frame) frame.src = mapSrc(cityInput.value.trim() || "Dallas");
 }
 
 function updatePrice() {
@@ -109,19 +67,11 @@ cityInput.addEventListener("input", updatePrice);
 doorsInput.addEventListener("input", updatePrice);
 document.querySelectorAll('input[name="kind"]').forEach((el) => el.addEventListener("change", updatePrice));
 
-document.getElementById("drawBtn").addEventListener("click", () => {
-  drawing = !drawing;
-  document.getElementById("drawBtn").classList.toggle("on", drawing);
-  mapHint.textContent = drawing
-    ? "Click the map to drop waypoints for your own route."
-    : "Click a city on the map.";
-});
-
-
-document.getElementById("clearDraw").addEventListener("click", () => {
-  customPath = [];
-  drawPath();
-});
+const streetBtn = document.getElementById("mapStreet");
+const satBtn = document.getElementById("mapSat");
+if (streetBtn) streetBtn.addEventListener("click", () => { mapType = "m"; renderMap(); });
+if (satBtn) satBtn.addEventListener("click", () => { mapType = "h"; renderMap(); });
+cityInput.addEventListener("change", renderMap);
 
 document.getElementById("bookForm").addEventListener("submit", async (e) => {
   e.preventDefault();
