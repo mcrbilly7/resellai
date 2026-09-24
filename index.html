@@ -3,117 +3,113 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nossonk LLC — Route planning & door hanger distribution | DFW</title>
-  <meta name="description" content="Plan a DFW door hanger route on the map, draw your own path, and track the walk. 25¢ a door. Call (945) 239-5974." />
+  <title>Nossonk LLC — Door hangers within 30 minutes of Dallas</title>
+  <meta name="description" content="Nossonk LLC hangs door hangers across cities within 30 minutes of Dallas. 25¢ per door. $25 out-of-area fee, waived at 1,000 doors." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="app">
-  <header class="topbar">
-    <a class="brand" href="index.html">
-      <img src="assets/logo.jpg" alt="" />
-      <span>
-        <b>Nossonk</b>
-        <i>DFW routes</i>
-      </span>
-    </a>
+<body>
+  <header class="bar">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="" /><span>Nossonk LLC</span></a>
     <nav>
-      <a class="on" href="index.html">Plan</a>
-      <a href="track.html">Track</a>
+      <a href="#work">Work</a>
       <a href="#rates">Rates</a>
-      <a href="#book">Book</a>
+      <a href="track.html">Tracker</a>
     </nav>
-    <a class="call" href="tel:+19452395974">(945) 239-5974</a>
+    <button class="btn dark" data-open-book type="button">Book a route</button>
   </header>
 
-  <section class="desk">
-    <aside class="dock">
-      <p class="eyebrow">Door hanger distribution</p>
-      <h1>Pick a city, click a corridor, or draw the streets you want walked.</h1>
-      <p class="lede">The map is the job ticket. Select a DFW city, load a ready route, or plot your own waypoints. Pricing updates as you go.</p>
-
-      <div class="mode-switch" role="tablist">
-        <button type="button" id="modeSelect" class="on">Click a route</button>
-        <button type="button" id="modeDraw">Draw my own</button>
-      </div>
-
-      <label class="field">
-        Doors on this job
-        <input id="doors" type="number" min="1" step="1" value="500" />
-      </label>
-
-      <div class="price-card" id="priceCard">
-        <span class="price-label">Estimate</span>
-        <strong id="priceTotal">$125.00</strong>
-        <p id="priceDetail">500 doors in Dallas · no travel fee</p>
-      </div>
-
-      <div class="actions">
-        <button type="button" class="btn solid" id="saveRoute">Save & start tracking</button>
-        <button type="button" class="btn ghost" id="clearRoute">Clear map</button>
-      </div>
-      <p class="hint" id="hint">Click a gold city pin to load that corridor.</p>
-    </aside>
-
-    <div class="map-wrap">
-      <div id="map" role="application" aria-label="DFW route map"></div>
-      <div class="map-legend">
-        <span><i class="dot gold"></i> City corridor</span>
-        <span><i class="dot line"></i> Your route</span>
-        <span><i class="dot walk"></i> Active track</span>
+  <section class="hero">
+    <div>
+      <p class="kicker">Dallas · 30-minute service area</p>
+      <h1>Door hangers on the handle. Booked on a map, walked by a crew.</h1>
+      <p class="intro">Nossonk LLC distributes printed hangers in cities within about 30 minutes of Dallas. You book the city and door count. We walk the route. Mailboxes stay empty.</p>
+      <div class="hero-row">
+        <button class="btn dark" data-open-book type="button">Book a route</button>
+        <a class="btn light" href="tel:+19452395974">(945) 239-5974</a>
       </div>
     </div>
+    <img src="assets/hero-home.jpg" alt="North Texas front door" />
   </section>
 
-  <section class="strip" id="routes">
-    <h2>Ready corridors</h2>
-    <p>Tap one to drop it on the map. These are typical walk areas, not locked streets — we confirm the block list by phone.</p>
-    <div class="route-grid" id="routeGrid"></div>
+  <section class="facts">
+    <div><b>25¢</b> per door</div>
+    <div><b>$25</b> out-of-area fee</div>
+    <div><b>$0</b> fee in Dallas</div>
+    <div><b>$0</b> fee at 1,000 doors</div>
   </section>
 
-  <section class="split-info" id="rates">
+  <section class="work" id="work">
     <div>
-      <h2>Simple rate card</h2>
-      <ul class="rate-list">
-        <li><b>25¢</b> each door</li>
-        <li><b>$15</b> travel outside Dallas</li>
-        <li><b>$0</b> travel in Dallas</li>
-        <li><b>$0</b> travel at 1,000+ doors</li>
-        <li>Printing is separate</li>
-        <li>DFW Metroplex only</li>
-      </ul>
+      <h2>What you are hiring</h2>
+      <p>A local crew to place your hanger on doors in a city we can reach from Dallas in about half an hour. No Fort Worth day trips. No out-of-metro work.</p>
+      <ol>
+        <li>Book a city on the map and set the door count.</li>
+        <li>We confirm the neighborhood list by phone or text.</li>
+        <li>The walking phone opens the tracker and shares precise GPS while the route is live.</li>
+      </ol>
     </div>
-    <figure>
-      <img src="assets/delivery.jpg" alt="Hanger placed on a residential door handle" />
-      <figcaption>On the handle. Never the mailbox.</figcaption>
-    </figure>
+    <img src="assets/delivery.jpg" alt="Hanger on a door handle" />
   </section>
 
-  <section class="book" id="book">
+  <section class="rates" id="rates">
+    <h2>Rates</h2>
+    <table>
+      <tr><th>Distribution</th><td>25¢ per door</td></tr>
+      <tr><th>Dallas</th><td>No travel fee</td></tr>
+      <tr><th>Any other booked city</th><td>$25 out-of-area fee</td></tr>
+      <tr><th>1,000 doors or more</th><td>Out-of-area fee waived</td></tr>
+      <tr><th>Printing</th><td>Not included</td></tr>
+      <tr><th>Coverage</th><td>Cities within 30 minutes of Dallas</td></tr>
+    </table>
+  </section>
+
+  <section class="contact" id="contact">
     <div>
-      <h2>Ready to hang?</h2>
-      <p>Send the printed count, the city, and whether you used a map route or drew your own. We confirm before a crew walks.</p>
-      <p class="contacts">
-        <a href="tel:+19452395974">(945) 239-5974</a>
-        <a href="mailto:noskotx@gmail.com">noskotx@gmail.com</a>
-      </p>
+      <h2>Shop</h2>
+      <p><a href="tel:+19452395974">(945) 239-5974</a><br /><a href="mailto:noskotx@gmail.com">noskotx@gmail.com</a></p>
     </div>
     <form id="contactForm">
       <label>Name <input name="name" required /></label>
       <label>Phone or email <input name="reply" required /></label>
-      <label>Notes <textarea name="message" rows="4" placeholder="City, doors, route name"></textarea></label>
-      <button class="btn solid" type="submit">Open email draft</button>
+      <label>Message <textarea name="message" rows="4"></textarea></label>
+      <button class="btn dark" type="submit">Email the shop</button>
     </form>
   </section>
 
-  <footer>
-    <span>© <span id="year"></span> Nossonk LLC · Dallas–Fort Worth</span>
-    <a href="track.html">Open tracker</a>
-  </footer>
+  <footer>© <span id="year"></span> Nossonk LLC</footer>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <div class="modal" id="bookModal">
+    <div class="sheet">
+      <header>
+        <strong>Book a route</strong>
+        <button type="button" id="closeBook" class="x">Close</button>
+      </header>
+      <div class="sheet-grid">
+        <div class="map-pane">
+          <svg id="bookMap" role="img" aria-label="DFW service map"></svg>
+          <div class="map-tools">
+            <button type="button" id="drawBtn">Draw my route</button>
+            <button type="button" id="clearDraw">Clear line</button>
+            <p id="mapHint">Click a city. Map is built into the site — no live map download.</p>
+          </div>
+        </div>
+        <form id="bookForm">
+          <label>City
+            <input id="bookCity" list="cityList" value="Dallas" required />
+            <datalist id="cityList"></datalist>
+          </label>
+          <p class="fine" id="areaNote">Home base.</p>
+          <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
+          <div class="estimate" id="estimate"></div>
+          <button class="btn dark full" type="submit">Save job & open tracker</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="data.js"></script>
+  <script src="map.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

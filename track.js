@@ -1,151 +1,123 @@
-const params = new URLSearchParams(location.search);
-let route = null;
+let job = null;
+if (location.hash.length > 1) job = decodeJob(location.hash.slice(1));
+if (!job) job = loadJob();
 
-if (location.hash.length > 1) {
-  route = decodeRoute(location.hash.slice(1));
-}
-if (!route) {
-  const last = localStorage.getItem("noskotx-last");
-  if (last) route = loadRoute(last);
-}
-
-const map = L.map("map", { zoomControl: false }).setView(DALLAS, 10);
-L.control.zoom({ position: "bottomright" }).addTo(map);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-  attribution: "&copy; OpenStreetMap &copy; CARTO",
-  maxZoom: 19
-}).addTo(map);
+const svg = document.getElementById("trackMap");
+const statusEl = document.getElementById("gpsStatus");
+const gate = document.getElementById("permGate");
+const live = document.getElementById("livePanel");
 
 let watchId = null;
-let trailLine = null;
-let hereMarker = null;
+let startedAt = job && job.startedAt ? job.startedAt : null;
 let timer = null;
-let startedAt = route && route.startedAt ? route.startedAt : null;
 
 function persist() {
-  if (!route) return;
-  saveRoute(route);
-  history.replaceState(null, "", "#" + encodeRoute(route));
+  if (!job) return;
+  saveJob(job);
+  history.replaceState(null, "", "#" + encodeJob(job));
 }
 
 function paint() {
-  if (!route) {
-    document.getElementById("routeName").textContent = "No route loaded";
-    return;
-  }
-  document.getElementById("routeName").textContent = route.name + " · " + route.city;
-  document.getElementById("statGoal").textContent = Number(route.doors || 0).toLocaleString();
-  document.getElementById("statDone").textContent = Number(route.done || 0).toLocaleString();
-  const pct = route.doors ? Math.min(100, Math.round((route.done || 0) / route.doors * 100)) : 0;
-  document.getElementById("statPct").textContent = pct + "% complete";
-  document.getElementById("meterFill").style.width = pct + "%";
-
-  if (route.path && route.path.length) {
-    const poly = L.polygon(route.path, {
-      color: "#e8a54b",
-      weight: 2,
-      fillColor: "#e8a54b",
-      fillOpacity: 0.12
-    }).addTo(map);
-    map.fitBounds(poly.getBounds(), { padding: [36, 36] });
-  }
-
-  if (route.trail && route.trail.length) {
-    trailLine = L.polyline(route.trail, { color: "#7dd3c0", weight: 4 }).addTo(map);
-  }
+  drawMetroMap(svg, {
+    selected: job && job.city,
+    path: job && (job.trail && job.trail.length ? job.trail : job.path),
+    here: job && job.here
+  });
 }
 
-function tickClock() {
+function renderStats() {
+  if (!job) {
+    document.getElementById("jobTitle").textContent = "No job loaded";
+    return;
+  }
+  document.getElementById("jobTitle").textContent = job.city + " · " + job.doors.toLocaleString() + " doors";
+  document.getElementById("statDone").textContent = (job.done || 0).toLocaleString();
+  document.getElementById("statGoal").textContent = job.doors.toLocaleString();
+  const pct = job.doors ? Math.min(100, Math.round((job.done || 0) / job.doors * 100)) : 0;
+  document.getElementById("meterFill").style.width = pct + "%";
+  document.getElementById("statPct").textContent = pct + "%";
+}
+
+function clock() {
   if (!startedAt) return;
   const s = Math.floor((Date.now() - startedAt) / 1000);
-  const m = String(Math.floor(s / 60)).padStart(2, "0");
-  const r = String(s % 60).padStart(2, "0");
-  document.getElementById("statTime").textContent = m + ":" + r;
+  document.getElementById("statTime").textContent =
+    String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
 }
 
-document.getElementById("logDoors").onclick = () => {
-  if (!route) {
-    route = { id: uid(), name: "Ad-hoc track", city: "Dallas", doors: 500, done: 0, path: null, trail: [], created: Date.now() };
-  }
-  const n = Number(document.getElementById("inc").value || 0);
-  route.done = Math.max(0, (route.done || 0) + n);
-  if (!startedAt) startedAt = Date.now();
-  route.startedAt = startedAt;
-  persist();
-  document.getElementById("statDone").textContent = route.done.toLocaleString();
-  const pct = route.doors ? Math.min(100, Math.round(route.done / route.doors * 100)) : 0;
-  document.getElementById("statPct").textContent = pct + "% complete";
-  document.getElementById("meterFill").style.width = pct + "%";
-};
-
-document.getElementById("plus").onclick = () => {
-  const el = document.getElementById("inc");
-  el.value = Number(el.value || 0) + 10;
-};
-document.getElementById("minus").onclick = () => {
-  const el = document.getElementById("inc");
-  el.value = Math.max(1, Number(el.value || 0) - 10);
-};
-
-document.getElementById("startGps").onclick = () => {
+function startGps() {
   if (!navigator.geolocation) {
-    document.getElementById("gpsStatus").textContent = "This browser has no GPS.";
+    statusEl.textContent = "This phone cannot share GPS.";
     return;
   }
-  if (!route) {
-    route = { id: uid(), name: "Live walk", city: "Dallas", doors: 500, done: 0, path: null, trail: [], created: Date.now() };
+  statusEl.textContent = "Waiting for precise location… tap Allow on the prompt.";
+  if (!job) {
+    job = { id: uid(), city: "Dallas", doors: 0, done: 0, path: [], trail: [], created: Date.now() };
   }
   if (!startedAt) startedAt = Date.now();
-  route.startedAt = startedAt;
-  if (!timer) timer = setInterval(tickClock, 1000);
-  document.getElementById("gpsStatus").textContent = "Waiting for a GPS fix…";
+  job.startedAt = startedAt;
+  if (!timer) timer = setInterval(clock, 1000);
+  gate.hidden = true;
+  live.hidden = false;
+  persist();
   watchId = navigator.geolocation.watchPosition((pos) => {
     const pt = [pos.coords.latitude, pos.coords.longitude];
-    route.trail = route.trail || [];
-    route.trail.push(pt);
-    persist();
-    if (!trailLine) trailLine = L.polyline(route.trail, { color: "#7dd3c0", weight: 4 }).addTo(map);
-    else trailLine.addLatLng(pt);
-    if (!hereMarker) {
-      hereMarker = L.circleMarker(pt, { radius: 7, color: "#fff", fillColor: "#7dd3c0", fillOpacity: 1, weight: 2 }).addTo(map);
-    } else {
-      hereMarker.setLatLng(pt);
+    job.here = pt;
+    job.trail = job.trail || [];
+    const last = job.trail[job.trail.length - 1];
+    if (!last || Math.abs(last[0] - pt[0]) > 0.00004 || Math.abs(last[1] - pt[1]) > 0.00004) {
+      job.trail.push(pt);
     }
-    map.panTo(pt);
-    document.getElementById("gpsStatus").textContent =
-      "Live · " + pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+    persist();
+    paint();
+    const acc = Math.round(pos.coords.accuracy);
+    statusEl.textContent = "Precise GPS on · accuracy about " + acc + " meters";
   }, (err) => {
-    document.getElementById("gpsStatus").textContent = "GPS blocked: " + err.message;
-  }, { enableHighAccuracy: true, maximumAge: 5000 });
-};
+    statusEl.textContent = err.code === 1
+      ? "Location was blocked. In the phone settings, allow Precise Location for this site."
+      : "GPS error: " + err.message;
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 20000
+  });
+}
 
-document.getElementById("stopGps").onclick = () => {
+document.getElementById("allowGps").addEventListener("click", startGps);
+document.getElementById("stopGps").addEventListener("click", () => {
   if (watchId != null) navigator.geolocation.clearWatch(watchId);
   watchId = null;
-  document.getElementById("gpsStatus").textContent = "GPS stopped. Trail is saved on this link.";
-};
+  statusEl.textContent = "GPS stopped. Trail is saved on this job link.";
+});
 
-document.getElementById("shareLink").onclick = async () => {
-  if (route) persist();
-  const url = location.href;
-  try {
-    await navigator.clipboard.writeText(url);
-    document.getElementById("gpsStatus").textContent = "Tracking link copied.";
-  } catch {
-    prompt("Copy this tracking link", url);
-  }
-};
-
-document.getElementById("resetTrack").onclick = () => {
-  if (!route) return;
-  route.done = 0;
-  route.trail = [];
-  route.startedAt = null;
-  startedAt = null;
+document.getElementById("logDoors").addEventListener("click", () => {
+  if (!job) return;
+  job.done = Math.max(0, (job.done || 0) + Number(document.getElementById("inc").value || 0));
   persist();
-  location.reload();
-};
+  renderStats();
+});
 
-paint();
-if (startedAt) timer = setInterval(tickClock, 1000);
-tickClock();
+document.getElementById("shareLink").addEventListener("click", async () => {
+  persist();
+  try {
+    await navigator.clipboard.writeText(location.href);
+    statusEl.textContent = "Job link copied.";
+  } catch {
+    prompt("Copy job link", location.href);
+  }
+});
+
+if (job) {
+  document.getElementById("permCity").textContent = job.city;
+  renderStats();
+  paint();
+  if (job.startedAt) {
+    gate.hidden = true;
+    live.hidden = false;
+    startGps();
+  }
+} else {
+  document.getElementById("permCity").textContent = "No booked route";
+  paint();
+}
+clock();

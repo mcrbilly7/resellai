@@ -1,10 +1,11 @@
 # Nossonk LLC
 
-Door hanger distribution for the Dallas–Fort Worth Metroplex.
+Door hanger distribution within about 30 minutes of Dallas.
 
-Live site: https://mcrbilly7.github.io/resellai/
+- 25¢ per door
+- $25 out-of-area fee (not Dallas)
+- Fee waived at 1,000 doors
+- Map is built into the site and opens only when booking
+- Tracker uses the phone’s precise GPS after the walker taps Allow
 
-- Plan a route on the map (`index.html`)
-- Track a walk with door counts and optional GPS (`track.html`)
-- Rate: 25¢ / door · $15 travel outside Dallas · waived at 1,000 doors
-- (945) 239-5974 · noskotx@gmail.com
+https://mcrbilly7.github.io/resellai/
