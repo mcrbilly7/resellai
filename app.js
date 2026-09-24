@@ -18,40 +18,27 @@ CITIES.forEach((c) => {
   cityList.appendChild(o);
 });
 
+function showArea(lat, lng, zoom) {
+  const frame = document.getElementById("bookMap");
+  if (!frame) return;
+  frame.src = "https://maps.google.com/maps?q=" + lat + "," + lng + "&z=" + (zoom || 16) + "&hl=en&t=m&output=embed";
+}
+
+function mid(path) {
+  if (!path || !path.length) return [32.7767, -96.7970];
+  return path[Math.floor(path.length / 2)];
+}
+
 function ensureBookMap() {
-  if (bookView) {
-    setTimeout(() => bookView.map.invalidateSize(), 200);
-    return bookView;
-  }
-  bookView = makeStreetMap("bookMap");
-  bookView.map.on("click", (e) => {
-    if (!drawing) return;
-    customPath.push([e.latlng.lat, e.latlng.lng]);
-    mapHint.textContent = customPath.length === 1
-      ? "First corner set. Click the next corner of the street."
-      : customPath.length + " corners. Click the next corner, or wait for the door count.";
-    drawLayers();
-    if (customPath.length >= 2) queueCount();
-  });
-  setTimeout(() => bookView.map.invalidateSize(), 250);
-  return bookView;
+  const match = selected || CITIES[0];
+  showArea(match.lat, match.lng, 15);
 }
 
 function drawLayers() {
-  if (!bookView) return;
-  if (bookView.line) bookView.map.removeLayer(bookView.line);
-  if (bookView.houseLayer) bookView.map.removeLayer(bookView.houseLayer);
-  if (bookView.aptLayer) bookView.map.removeLayer(bookView.aptLayer);
   if (customPath.length) {
-    bookView.line = L.polyline(customPath, { color: "#0f2744", weight: 5 }).addTo(bookView.map);
+    const pt = mid(customPath);
+    showArea(pt[0], pt[1], 16);
   }
-  bookView.houseLayer = L.layerGroup(
-    (counts.housePts || []).map((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 1, fillColor: "#c4a056", fillOpacity: 0.95 }))
-  ).addTo(bookView.map);
-  bookView.aptLayer = L.layerGroup(
-    (counts.aptPts || []).map((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 1, fillColor: "#0f2744", fillOpacity: 0.95 }))
-  ).addTo(bookView.map);
-  if (customPath.length > 1) bookView.map.fitBounds(L.latLngBounds(customPath), { padding: [28, 28] });
 }
 
 function queueCount() {
@@ -144,8 +131,7 @@ async function loadCityRoute() {
   }
   selected = match;
   drawing = false;
-  ensureBookMap();
-  bookView.map.setView([match.lat, match.lng], 15);
+  showArea(match.lat, match.lng, 15);
   mapHint.textContent = "Loading 20 residential routes in " + match.name + "…";
   try {
     premade = await twentyCityRoutes(match);
@@ -190,9 +176,8 @@ function updatePrice() {
 }
 
 function renderMap() {
-  ensureBookMap();
-  const match = CITIES.find((c) => c.name.toLowerCase() === cityInput.value.trim().toLowerCase());
-  if (match) bookView.map.setView([match.lat, match.lng], 16);
+  const match = CITIES.find((c) => c.name.toLowerCase() === cityInput.value.trim().toLowerCase()) || selected;
+  if (match) showArea(match.lat, match.lng, 15);
 }
 
 function openBook() {
@@ -220,15 +205,7 @@ cityInput.addEventListener("input", updatePrice);
 if (doorsInput) doorsInput.addEventListener("input", updatePrice);
 
 document.getElementById("drawBtn").addEventListener("click", () => {
-  drawing = !drawing;
-  document.getElementById("drawBtn").classList.toggle("on", drawing);
-  customPath = [];
-  counts = { houses: 0, apts: 0, housePts: [], aptPts: [], streets: ["custom street"] };
-  drawLayers();
-  mapHint.textContent = drawing
-    ? "Click the first street corner, then the opposite corner. Keep clicking down the block."
-    : "Click corners is off.";
-  updatePrice();
+  mapHint.textContent = "Pick a residential route under the map. The Google map shows that neighborhood with streets and houses.";
 });
 
 document.getElementById("clearDraw").addEventListener("click", () => {
