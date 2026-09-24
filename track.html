@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track route — Nossonk LLC</title>
+  <meta name="description" content="Track a Nossonk door hanger route live from the walking phone." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="app track-page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <img src="assets/logo.jpg" alt="" />
+      <span>
+        <b>Nossonk</b>
+        <i>Live track</i>
+      </span>
+    </a>
+    <nav>
+      <a href="index.html">Plan</a>
+      <a class="on" href="track.html">Track</a>
+    </nav>
+    <a class="call" href="tel:+19452395974">(945) 239-5974</a>
+  </header>
+
+  <section class="desk">
+    <aside class="dock">
+      <p class="eyebrow" id="routeName">No route loaded</p>
+      <h1>Walk the line. Mark doors as they go up.</h1>
+      <p class="lede">Open this page on the phone that walks the route. Start tracking to drop a GPS trail. Progress is saved on this device and in the link if you share it.</p>
+
+      <div class="stats">
+        <div><b id="statDone">0</b><span>doors hung</span></div>
+        <div><b id="statGoal">—</b><span>job total</span></div>
+        <div><b id="statTime">00:00</b><span>elapsed</span></div>
+      </div>
+      <div class="meter"><i id="meterFill"></i></div>
+      <p class="hint" id="statPct">0%</p>
+
+      <label class="field">
+        Add hung doors
+        <span class="stepper">
+          <button type="button" id="minus">−10</button>
+          <input id="inc" type="number" value="25" min="1" />
+          <button type="button" id="plus">+10</button>
+        </span>
+      </label>
+      <button type="button" class="btn solid" id="logDoors">Log doors</button>
+
+      <div class="actions">
+        <button type="button" class="btn ghost" id="startGps">Start GPS trail</button>
+        <button type="button" class="btn ghost" id="stopGps">Stop GPS</button>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="shareLink">Copy tracking link</button>
+        <button type="button" class="btn ghost" id="resetTrack">Reset progress</button>
+      </div>
+      <p class="hint" id="gpsStatus">GPS is off until you start it.</p>
+    </aside>
+    <div class="map-wrap">
+      <div id="map" role="application" aria-label="Live route tracker"></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Tracker runs in the browser. Keep this tab open on the walking phone.</span>
+    <a href="index.html">Back to planner</a>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data.js"></script>
+  <script src="track.js"></script>
+</body>
+</html>
