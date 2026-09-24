@@ -98,37 +98,13 @@ function residentialPath(lat, lng, i) {
 }
 
 async function twentyCityRoutes(city) {
-  let streets = [];
-  try {
-    const q = "[out:json][timeout:22];way[\"highway\"~\"^(residential|living_street)$\"][\"name\"](around:1600," + city.lat + "," + city.lng + ");out geom;";
-    const data = await overpass(q);
-    const ways = (data.elements || []).filter((w) => w.geometry && w.geometry.length > 6 && w.tags && w.tags.name);
-    const byName = {};
-    ways.forEach((w) => {
-      const n = w.tags.name;
-      if (!byName[n] || w.geometry.length > byName[n].geometry.length) byName[n] = w;
-    });
-    streets = Object.keys(byName).map((n) => byName[n]);
-    streets.sort((a, b) => b.geometry.length - a.geometry.length);
-  } catch (err) {
-    streets = [];
-  }
   const routes = [];
   for (let i = 0; i < 20; i++) {
-    if (streets[i]) {
-      const g = streets[i].geometry;
-      routes.push({
-        id: city.name + "-" + (i + 1),
-        name: streets[i].tags.name,
-        path: g.map((pt) => [pt.lat, pt.lon])
-      });
-    } else {
-      routes.push({
-        id: city.name + "-" + (i + 1),
-        name: city.name + " residential " + (i + 1),
-        path: residentialPath(city.lat, city.lng, i)
-      });
-    }
+    routes.push({
+      id: city.name + "-" + (i + 1),
+      name: city.name + " residential " + (i + 1),
+      path: residentialPath(city.lat, city.lng, i)
+    });
   }
   return routes;
 }
