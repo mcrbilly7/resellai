@@ -183,11 +183,25 @@ document.getElementById("clearDraw").addEventListener("click", () => {
 
 document.getElementById("loadRoute").addEventListener("click", loadCityRoute);
 
+function showBooked(sendvia, name) {
+  const who = (name || "there").trim();
+  const how = sendvia === "both" ? "text and email" : sendvia;
+  const title = document.getElementById("bookDoneTitle");
+  const note = document.getElementById("bookDoneNote");
+  if (title) title.textContent = "Thanks" + (who && who !== "there" ? ", " + who.split(" ")[0] : "") + ". Booking received.";
+  if (note) note.textContent = "We have your request. After we confirm the route, we will send your private tracker by " + how + ". You do not need to stay on this page.";
+  document.getElementById("bookStep").hidden = true;
+  document.getElementById("bookDone").hidden = false;
+}
+
 document.getElementById("bookForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
   const match = CITIES.find((c) => c.name.toLowerCase() === cityInput.value.trim().toLowerCase());
   if (!match) {
     mapHint.textContent = "Choose a listed city within 30 minutes of Dallas.";
+    if (btn) { btn.disabled = false; btn.textContent = "Confirm booking"; }
     return;
   }
   const piece = (document.querySelector('input[name="piece"]:checked') || {}).value || "hanger";
@@ -199,10 +213,9 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
   if (!mix.doors && doorsInput && doorsInput.value) {
     mix.doors = parseInt(doorsInput.value, 10) || 0;
   }
-  if (!mix.doors) {
-    mapHint.textContent = "Load a city route or click street corners so we can count doors.";
-    return;
-  }
+  if (!mix.doors) mix.doors = 1;
+  if (!mix.total) mix.total = priceMix(mix.houses || mix.doors, mix.apts || 0, match.name).total;
+
   const job = {
     id: uid(),
     city: match.name,
@@ -245,22 +258,48 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
     customer_link: customer,
     note: "Confirm this job first. Then text and/or email the CUSTOMER link only."
   };
+  showBooked(sendvia, name);
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
   try {
     await fetch("https://formsubmit.co/ajax/noskotx@gmail.com", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: ctrl ? ctrl.signal : undefined
     });
   } catch (err) {
-    const body = encodeURIComponent(Object.keys(payload).map((k) => k + ": " + payload[k]).join("\n"));
-    location.href = "mailto:noskotx@gmail.com?subject=" + encodeURIComponent(payload._subject) + "&body=" + body;
+    try {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "https://formsubmit.co/noskotx@gmail.com";
+      form.target = "noskotx_mail";
+      form.style.display = "none";
+      Object.keys(payload).forEach((k) => {
+        const i = document.createElement("input");
+        i.name = k;
+        i.value = payload[k];
+        form.appendChild(i);
+      });
+      if (!document.getElementById("noskotx_mail")) {
+        const iframe = document.createElement("iframe");
+        iframe.name = "noskotx_mail";
+        iframe.id = "noskotx_mail";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+      }
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err2) {}
   }
-  const note = document.getElementById("bookDoneNote");
-  if (note) {
-    note.textContent = "We will confirm first. Then we send your tracker by " + (sendvia === "both" ? "text and email" : sendvia) + ".";
-  }
-  document.getElementById("bookStep").hidden = true;
-  document.getElementById("bookDone").hidden = false;
+  if (timer) clearTimeout(timer);
+  if (btn) { btn.disabled = false; btn.textContent = "Confirm booking"; }
 });
 
-document.getElementById("year").textContent = new Date().getFullYear();
+const again = document.getElementById("bookAgain");
+if (again) again.addEventListener("click", () => {
+  document.getElementById("bookDone").hidden = true;
+  document.getElementById("bookStep").hidden = false;
+});
+
+const yearEl = document.getElementById("year"); if (yearEl) yearEl.textContent = new Date().getFullYear();

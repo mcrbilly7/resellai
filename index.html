@@ -151,22 +151,23 @@
             <label><input type="radio" name="sendvia" value="email" /> Email</label>
             <label><input type="radio" name="sendvia" value="both" /> Text and email</label>
           </fieldset>
-          <button class="btn navy full" type="submit">Request booking</button>
+          <button class="btn navy full" type="submit">Confirm booking</button>
         </form>
       </div>
       <div class="done" id="bookDone" hidden>
-        <h3>Request sent.</h3>
-        <p id="bookDoneNote">We will confirm the booking first. Then we send the customer tracker by the method you picked. You will not get a public tracking page until we approve it.</p>
+        <h3 id="bookDoneTitle">Booking received.</h3>
+        <p id="bookDoneNote">Thank you. We got your route request. We will confirm it, then send your private tracker by text, email, or both — whichever you chose.</p>
         <a class="btn navy full" href="phone.html">Call the shop</a>
         <a class="btn full" href="email.html">Email the shop</a>
+        <button class="btn full" type="button" id="bookAgain">Book another route</button>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="data.js?v=6"></script>
-  <script src="maps-v3.js?v=6"></script>
-  <script src="buildings.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="data.js?v=7"></script>
+  <script src="maps-v3.js?v=7"></script>
+  <script src="buildings.js?v=7"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
