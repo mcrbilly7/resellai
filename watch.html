@@ -20,20 +20,22 @@
   <section class="track-layout">
     <div>
       <p class="kicker" id="jobTitle">Customer view</p>
-      <h1>See houses and apartments as they go up.</h1>
+      <h1>Live map of the walking phone.</h1>
       <div class="facts slim">
         <div><b id="statHouse">0</b><span>houses</span></div>
         <div><b id="statApt">0</b><span>apartments</span></div>
         <div><b id="statDone">0</b><span>total</span></div>
       </div>
       <div class="meter"><i id="meterFill"></i></div>
-      <p class="fine" id="statPct">Open the latest customer link from the crew to refresh.</p>
+      <p class="fine" id="statPct">Waiting for live GPS from the crew phone.</p>
       <h3>Hung so far</h3>
       <ul class="log" id="logList"></ul>
     </div>
     <div class="map-pane tall"><svg id="watchMap" role="img" aria-label="Customer map"></svg></div>
   </section>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="data.js"></script>
+  <script src="live.js"></script>
   <script src="map.js"></script>
   <script src="watch.js"></script>
 </body>

@@ -10,6 +10,7 @@ const svg = document.getElementById("trackMap");
 const statusEl = document.getElementById("gpsStatus");
 const gate = document.getElementById("permGate");
 let watchId = null;
+const live = LiveHost(job);
 let startedAt = job.startedAt || null;
 let timer = null;
 
@@ -19,6 +20,7 @@ function persist() {
   history.replaceState(null, "", hash);
   const cust = document.getElementById("toCustomer");
   if (cust) cust.href = "watch.html" + hash;
+  live.publish(job);
 }
 
 function paint() {
