@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Customer view — Nossonk LLC</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .log { list-style: none; padding: 0; margin: 1rem 0 0; max-height: 280px; overflow: auto; border-top: 1px solid var(--line, #ddd); }
+    .log li { display: flex; justify-content: space-between; gap: .6rem; padding: .45rem 0; border-bottom: 1px solid var(--line, #ddd); font-size: .9rem; }
+  </style>
 </head>
 <body>
   <header class="bar">
@@ -18,17 +19,17 @@
   </header>
   <section class="track-layout">
     <div>
-      <p class="kicker" id="jobTitle">Waiting for a job</p>
-      <h1>Watch the route without walking it.</h1>
-      <p>This page does not use your GPS. It shows the last update the crew shared: city, door count, and the trail on the map.</p>
+      <p class="kicker" id="jobTitle">Customer view</p>
+      <h1>See houses and apartments as they go up.</h1>
       <div class="facts slim">
-        <div><b id="statDone">0</b><span>hung</span></div>
-        <div><b id="statGoal">—</b><span>booked</span></div>
-        <div><b id="statKind">—</b><span>property</span></div>
+        <div><b id="statHouse">0</b><span>houses</span></div>
+        <div><b id="statApt">0</b><span>apartments</span></div>
+        <div><b id="statDone">0</b><span>total</span></div>
       </div>
       <div class="meter"><i id="meterFill"></i></div>
-      <p class="fine" id="statPct">No live feed until the crew copies an updated link.</p>
-      <p class="fine" id="updated">Open this page from the customer link created at booking.</p>
+      <p class="fine" id="statPct">Open the latest customer link from the crew to refresh.</p>
+      <h3>Hung so far</h3>
+      <ul class="log" id="logList"></ul>
     </div>
     <div class="map-pane tall"><svg id="watchMap" role="img" aria-label="Customer map"></svg></div>
   </section>
