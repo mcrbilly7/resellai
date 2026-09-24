@@ -143,14 +143,16 @@
             <datalist id="cityList"></datalist>
           </label>
           <p class="fine" id="areaNote">Home base.</p>
-          <p class="fine" id="countLine">Houses and apartments load from the street map.</p>
+          <p class="fine" id="countLine">Counts come from buildings on that street, or type the real numbers.</p>
           <fieldset class="kind">
             <legend>Piece</legend>
             <label><input type="radio" name="piece" value="hanger" checked /> Door hangers</label>
             <label><input type="radio" name="piece" value="card" /> Door cards</label>
             <label><input type="radio" name="piece" value="both" /> Both</label>
           </fieldset>
-          <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
+          <label>Houses <input id="bookHouses" type="number" min="0" step="1" value="0" required /></label>
+          <label>Apartments <input id="bookApts" type="number" min="0" step="1" value="0" required /></label>
+          <input id="bookDoors" type="hidden" value="0" />
           <div class="estimate" id="estimate"></div>
           <label>Your name <input id="bookName" name="name" required /></label>
           <label>Phone <input id="bookPhone" name="phone" type="tel" required /></label>
@@ -174,8 +176,10 @@
     </div>
   </div>
 
-  <script src="data.js?v=15"></script>
-  <script src="mail.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="data.js?v=16"></script>
+  <script src="gmap.js?v=16"></script>
+  <script src="mail.js?v=16"></script>
+  <script src="app.js?v=16"></script>
+  <script src="realcount.js?v=16"></script>
 </body>
 </html>

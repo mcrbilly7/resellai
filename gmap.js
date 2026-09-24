@@ -117,11 +117,6 @@ function countAlong(geo, path) {
   let houses = 0, apts = 0;
   geo.houses.forEach(function (p) { if (nearPath(p, path, 45)) houses++; });
   geo.apts.forEach(function (p) { if (nearPath(p, path, 45)) apts++; });
-  if (!houses && !apts) {
-    const m = pathLen(path);
-    houses = Math.max(8, Math.round(m / 22));
-    apts = Math.round(houses * 0.25);
-  }
   return { houses: houses, apts: apts };
 }
 
@@ -143,16 +138,7 @@ function twentyRoutes(geo, city) {
       apts: c.apts
     });
   });
-  while (out.length < 20) {
-    const i = out.length;
-    const ang = (i / 20) * Math.PI * 2;
-    const lat = city.lat + Math.cos(ang) * 0.008;
-    const lng = city.lng + Math.sin(ang) * 0.008;
-    const path = [[lat - 0.001, lng], [lat + 0.001, lng + 0.0006]];
-    const c = countAlong(geo, path);
-    out.push({ name: city.name + " residential " + (i + 1), path: path, houses: c.houses, apts: c.apts });
-  }
-  return out.slice(0, 20);
+  return out.filter(function (r) { return r.houses + r.apts > 0; }).slice(0, 20);
 }
 
 function drawBuildings(map, geo, layers) {
