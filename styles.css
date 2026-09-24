@@ -137,3 +137,11 @@ footer img { height: 28px; width: auto; }
   .work, .rates, .contact, .sheet-grid, .track-layout, .facts, .pair { grid-template-columns: 1fr; }
   .hero { min-height: 78vh; }
 }
+
+.admin-link { margin-left: auto; font-size: 10px; letter-spacing: 0.04em; color: #c8c2b6; text-decoration: none; }
+.admin-link:hover { color: #8a8478; }
+.route-list { max-height: 230px; overflow: auto; border-top: 1px solid var(--line); background: #fff; }
+.route-list button { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: #fff; padding: 0.55rem 0.8rem; cursor: pointer; font: inherit; }
+.route-list button b { display: block; font-size: 0.92rem; }
+.route-list button span { color: var(--muted); font-size: 0.8rem; }
+.route-list button.on { background: #f4efe4; }

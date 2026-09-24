@@ -109,6 +109,7 @@
   <footer>
     <img src="assets/logo.jpg" alt="" />
     <span>© <span id="year"></span> Nossonk LLC · Dallas</span>
+    <a class="admin-link" href="admin.html">admin</a>
   </footer>
 
   <div class="modal" id="bookModal">
@@ -124,8 +125,9 @@
             <button type="button" id="loadRoute">Show city route</button>
             <button type="button" id="drawBtn">Click corners</button>
             <button type="button" id="clearDraw">Clear</button>
-            <p id="mapHint">Gold dots are houses. Navy dots are apartments. Premade routes follow real streets. For a custom street, click one corner, then the next.</p>
+            <p id="mapHint">Esri street map. Gold = houses. Navy = apartments. Pick a premade residential route below, or click street corners.</p>
           </div>
+          <div class="route-list" id="routeList"></div>
         </div>
         <form id="bookForm">
           <label>City
@@ -165,9 +167,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="data.js?v=7"></script>
-  <script src="maps-v3.js?v=7"></script>
-  <script src="buildings.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="data.js?v=8"></script>
+  <script src="maps-v3.js?v=8"></script>
+  <script src="buildings.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

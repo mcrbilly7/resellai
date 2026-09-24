@@ -78,6 +78,64 @@ async function runCount() {
   }
 }
 
+let premade = [];
+let activeRouteId = null;
+
+function pathMeters(path) {
+  let m = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1], b = path[i];
+    const dLat = (b[0] - a[0]) * 111320;
+    const dLng = (b[1] - a[1]) * 111320 * Math.cos(a[0] * Math.PI / 180);
+    m += Math.sqrt(dLat * dLat + dLng * dLng);
+  }
+  return m;
+}
+
+function seedCounts(path) {
+  const m = pathMeters(path);
+  const houses = Math.max(18, Math.round(m / 22));
+  const apts = Math.max(0, Math.round(m / 180) * 6);
+  return { houses: houses, apts: apts };
+}
+
+function renderRouteList() {
+  const box = document.getElementById("routeList");
+  if (!box) return;
+  box.innerHTML = "";
+  premade.forEach((r) => {
+    const mix = priceMix(r.houses || 0, r.apts || 0, selected ? selected.name : "Dallas");
+    const b = document.createElement("button");
+    b.type = "button";
+    if (r.id === activeRouteId) b.className = "on";
+    b.innerHTML = "<b>" + r.name + "</b><span>" + (r.houses || 0) + " houses · " + (r.apts || 0) + " apartments · " + money(mix.total) + "</span>";
+    b.addEventListener("click", () => pickRoute(r, true));
+    box.appendChild(b);
+  });
+}
+
+async function pickRoute(route, recount) {
+  activeRouteId = route.id;
+  drawing = false;
+  const draw = document.getElementById("drawBtn");
+  if (draw) draw.classList.remove("on");
+  customPath = route.path.slice();
+  counts.streets = [route.name];
+  counts.houses = route.houses || 0;
+  counts.apts = route.apts || 0;
+  counts.housePts = [];
+  counts.aptPts = [];
+  if (doorsInput) doorsInput.value = String((route.houses || 0) + (route.apts || 0) || 1);
+  drawLayers();
+  updatePrice();
+  renderRouteList();
+  if (recount) await runCount().then(() => {
+    route.houses = counts.houses;
+    route.apts = counts.apts;
+    renderRouteList();
+  });
+}
+
 async function loadCityRoute() {
   const match = CITIES.find((c) => c.name.toLowerCase() === cityInput.value.trim().toLowerCase());
   if (!match) {
@@ -86,26 +144,25 @@ async function loadCityRoute() {
   }
   selected = match;
   drawing = false;
-  document.getElementById("drawBtn").classList.remove("on");
   ensureBookMap();
-  bookView.map.setView([match.lat, match.lng], 16);
-  mapHint.textContent = "Loading the street route in " + match.name + "…";
+  bookView.map.setView([match.lat, match.lng], 15);
+  mapHint.textContent = "Loading 20 residential routes in " + match.name + "…";
   try {
-    const route = await cityStreetRoute(match.lat, match.lng);
-    customPath = route.path;
-    counts.streets = route.streets || [];
-    if (!customPath.length) {
-      customPath = [
-        [match.lat, match.lng - 0.006],
-        [match.lat, match.lng + 0.006],
-        [match.lat - 0.004, match.lng + 0.006]
-      ];
-    }
-    drawLayers();
-    await runCount();
+    premade = await twentyCityRoutes(match);
   } catch (err) {
-    mapHint.textContent = "Street lookup is busy. Click corners on the map instead.";
+    premade = [];
+    for (let i = 0; i < 20; i++) {
+      premade.push({ id: match.name + "-" + (i + 1), name: match.name + " residential " + (i + 1), path: residentialPath(match.lat, match.lng, i) });
+    }
   }
+  premade.forEach((r) => {
+    const seed = seedCounts(r.path);
+    if (!r.houses) r.houses = seed.houses;
+    if (!r.apts) r.apts = seed.apts;
+  });
+  renderRouteList();
+  if (premade[0]) await pickRoute(premade[0], true);
+  mapHint.textContent = "20 residential routes in " + match.name + ". Gold = houses. Navy = apartments.";
 }
 
 function updatePrice() {
@@ -237,6 +294,7 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
     created: Date.now()
   };
   saveJob(job);
+  saveInbox(job);
   const hash = "#" + encodeJob(job);
   const base = location.origin + location.pathname.replace(/index\.html$/, "");
   const crew = base + "track.html" + hash;

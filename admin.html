@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Admin</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="Nossonk LLC" /></a>
+    <span class="role">Admin</span>
+  </header>
+  <section class="contact" id="gate">
+    <div>
+      <p class="kicker">Shop</p>
+      <h1>Admin</h1>
+      <p>Booking requests from this site land here and in noskotx@gmail.com.</p>
+    </div>
+    <form id="login">
+      <label>Password <input id="pw" type="password" required /></label>
+      <button class="btn navy" type="submit">Open inbox</button>
+    </form>
+  </section>
+  <section class="contact" id="inbox" hidden>
+    <div>
+      <p class="kicker">Inbox</p>
+      <h1>Booking requests</h1>
+      <p id="inboxCount"></p>
+      <a class="btn" href="shop.html">Send a customer tracker</a>
+    </div>
+    <div id="rows"></div>
+  </section>
+  <script src="data.js?v=8"></script>
+  <script src="buildings.js?v=8"></script>
+  <script>
+    const PASS = "Bigbilly101!";
+    document.getElementById("login").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (document.getElementById("pw").value !== PASS) {
+        alert("Wrong password.");
+        return;
+      }
+      sessionStorage.setItem("noskotx-admin", "1");
+      openInbox();
+    });
+    if (sessionStorage.getItem("noskotx-admin") === "1") openInbox();
+    function openInbox() {
+      document.getElementById("gate").hidden = true;
+      document.getElementById("inbox").hidden = false;
+      const list = loadInbox();
+      document.getElementById("inboxCount").textContent = list.length ? list.length + " request(s)." : "No requests on this device yet. New website bookings save here and also email the shop.";
+      const box = document.getElementById("rows");
+      box.innerHTML = "";
+      list.forEach((job) => {
+        const art = document.createElement("article");
+        art.style.cssText = "background:#fff;border:1px solid #ddd;padding:1rem;margin:0 0 0.8rem";
+        art.innerHTML = "<b>" + (job.name || "No name") + "</b><br/>" +
+          (job.phone || "") + " · " + (job.email || "") + "<br/>" +
+          (job.city || "") + " · " + (job.houses || 0) + " houses · " + (job.apts || 0) + " apartments · " +
+          (job.doors || 0) + " doors · " + (job.total != null ? money(job.total) : "") + "<br/>" +
+          "Send tracker by " + (job.sendvia || "") + " · " + (job.piece || "") + "<br/>" +
+          (job.streets && job.streets.join ? job.streets.join(", ") : "");
+        box.appendChild(art);
+      });
+    }
+  </script>
+</body>
+</html>
