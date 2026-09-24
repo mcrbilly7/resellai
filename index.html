@@ -120,8 +120,15 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <iframe id="bookMap" title="Google Map" style="width:100%;height:440px;border:0;display:block;background:#e8e8e8"
-            src="https://maps.google.com/maps?q=Dallas,+TX&z=14&hl=en&t=m&output=embed"></iframe>
+          <div id="gwrap" style="position:relative;height:440px;background:#e8e8e8">
+            <iframe id="bookMap" title="Google Map" style="width:100%;height:440px;border:0;display:block;pointer-events:none"
+              src="https://maps.google.com/maps?q=Dallas,+TX&z=16&hl=en&t=m&output=embed"></iframe>
+            <svg id="drawLayer" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></svg>
+            <div style="position:absolute;left:10px;top:10px;display:flex;gap:6px;z-index:3">
+              <button type="button" id="zoomIn">+</button>
+              <button type="button" id="zoomOut">−</button>
+            </div>
+          </div>
           <div class="map-tools">
             <button type="button" id="loadRoute">Show this city on Google</button>
             <button type="button" id="drawBtn">Click corners</button>
@@ -167,8 +174,8 @@
     </div>
   </div>
 
-  <script src="data.js?v=14"></script>
-  <script src="mail.js?v=14"></script>
-  <script src="app.js?v=14"></script>
+  <script src="data.js?v=15"></script>
+  <script src="mail.js?v=15"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
