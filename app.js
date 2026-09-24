@@ -1,5 +1,6 @@
 const modal = document.getElementById("bookModal");
-const svg = document.getElementById("bookMap");
+let bookView = null;
+let cityLayer = null;
 const cityInput = document.getElementById("bookCity");
 const doorsInput = document.getElementById("bookDoors");
 const cityList = document.getElementById("cityList");
@@ -16,20 +17,55 @@ CITIES.forEach((c) => {
   cityList.appendChild(o);
 });
 
-function renderMap() {
-  drawMetroMap(svg, {
-    selected: selected && selected.name,
-    path: customPath,
-    onSelect: (c) => {
-      selected = c;
-      cityInput.value = c.name;
-      drawing = false;
-      document.getElementById("drawBtn").classList.remove("on");
-      mapHint.textContent = c.name + " · about " + c.mins + " min from Dallas.";
-      updatePrice();
-      renderMap();
-    }
+function ensureBookMap() {
+  if (bookView) {
+    setTimeout(() => bookView.map.invalidateSize(), 200);
+    return bookView;
+  }
+  bookView = makeStreetMap("bookMap");
+  CITIES.forEach((c) => {
+    const mark = L.circleMarker([c.lat, c.lng], {
+      radius: c.name === "Dallas" ? 8 : 6,
+      color: "#fff",
+      weight: 1,
+      fillColor: c.name === "Dallas" ? "#0f2744" : "#c4a056",
+      fillOpacity: 1
+    }).addTo(bookView.map);
+    mark.bindTooltip(c.name);
+    mark.on("click", () => selectCity(c));
   });
+  bookView.map.on("click", (e) => {
+    if (!drawing) return;
+    customPath.push([e.latlng.lat, e.latlng.lng]);
+    drawPath();
+    mapHint.textContent = customPath.length + " points on your route.";
+  });
+  setTimeout(() => bookView.map.invalidateSize(), 250);
+  return bookView;
+}
+
+function selectCity(c) {
+  selected = c;
+  cityInput.value = c.name;
+  drawing = false;
+  document.getElementById("drawBtn").classList.remove("on");
+  mapHint.textContent = c.name + " · streets and houses · about " + c.mins + " min from Dallas.";
+  if (bookView) bookView.map.setView([c.lat, c.lng], 16);
+  updatePrice();
+}
+
+function drawPath() {
+  if (!bookView) return;
+  if (bookView.line) bookView.map.removeLayer(bookView.line);
+  if (customPath.length) {
+    bookView.line = L.polyline(customPath, { color: "#0f2744", weight: 4 }).addTo(bookView.map);
+  }
+}
+
+function renderMap() {
+  ensureBookMap();
+  drawPath();
+  if (selected) bookView.map.setView([selected.lat, selected.lng], 16);
 }
 
 function updatePrice() {
@@ -55,8 +91,8 @@ function updatePrice() {
 function openBook() {
   modal.classList.add("show");
   cityInput.value = selected ? selected.name : "Dallas";
-  renderMap();
   updatePrice();
+  setTimeout(renderMap, 50);
 }
 
 function closeBook() {
@@ -81,21 +117,10 @@ document.getElementById("drawBtn").addEventListener("click", () => {
     : "Click a city on the map.";
 });
 
-svg.addEventListener("click", (e) => {
-  if (!drawing) return;
-  const rect = svg.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width * 800;
-  const y = (e.clientY - rect.top) / rect.height * 640;
-  const [lat, lng] = unproject(x, y, 800, 640);
-  if (lat < BOUNDS.south || lat > BOUNDS.north || lng < BOUNDS.west || lng > BOUNDS.east) return;
-  customPath.push([lat, lng]);
-  mapHint.textContent = customPath.length + " points on your route.";
-  renderMap();
-});
 
 document.getElementById("clearDraw").addEventListener("click", () => {
   customPath = [];
-  renderMap();
+  drawPath();
 });
 
 document.getElementById("bookForm").addEventListener("submit", (e) => {
@@ -113,6 +138,7 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
     city: match.name,
     mins: match.mins,
     kind: p.kind,
+    piece: (document.querySelector('input[name="piece"]:checked') || {}).value || "hanger",
     rate: p.rate,
     doors: p.qty,
     total: p.total,

@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nossonk LLC — Door hanger distribution in Dallas</title>
-  <meta name="description" content="Professional door hanger distribution within 30 minutes of Dallas. 35¢ per house, 30¢ per apartment. $25 out-of-area fee, waived at 1,000 doors." />
+  <title>Nossonk LLC — Door hangers and door cards in Dallas</title>
+  <meta name="description" content="Door hangers on the handle and door cards left at the porch, within 30 minutes of Dallas. 35¢ per house, 30¢ per apartment." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -17,7 +18,6 @@
     <nav>
       <a href="#work">Service</a>
       <a href="#rates">Rates</a>
-      <a href="#trackers">Tracking</a>
       <a href="#contact">Contact</a>
     </nav>
     <div class="bar-end">
@@ -31,8 +31,8 @@
     <div class="hero-veil"></div>
     <div class="hero-copy">
       <p class="kicker">Dallas · thirty-minute service area</p>
-      <h1>Your hanger on the handle.<br />Not in the mailbox.</h1>
-      <p>Nossonk LLC walks cities within about thirty minutes of Dallas and places printed pieces where people actually see them.</p>
+      <h1>Hangers on the handle.<br />Cards at the door.</h1>
+      <p>Nossonk LLC walks cities within about thirty minutes of Dallas. We hang pieces on the handle and leave door cards on the porch — the same way lawn and pest companies do — never in the mailbox.</p>
       <div class="hero-row">
         <button class="btn gold" data-open-book type="button">Book a route</button>
         <a class="btn ghost" href="tel:+19452395974">Call the shop</a>
@@ -51,11 +51,12 @@
     <div class="copy">
       <p class="kicker">The work</p>
       <h2>A local crew, a mapped city, a count you can check.</h2>
-      <p>You book the city and whether the route is houses or apartments. We confirm the streets. The walking phone runs the crew tracker. You keep the customer view.</p>
+      <p>Book a city on the street map and choose houses or apartments. We hang door hangers and leave door cards at the porch — the leave-behind lawn crews use when they finish a yard.</p>
       <ul>
-        <li>On the handle. Never the mailbox.</li>
-        <li>Only cities about 30 minutes from Dallas.</li>
-        <li>Two links after booking: one for the hanger, one for you.</li>
+        <li>Door hangers on the handle.</li>
+        <li>Door cards and porch leave-behinds at the door.</li>
+        <li>Houses or apartments, streets you can see on the map.</li>
+        <li>Never the mailbox. Tracking stays private to the job.</li>
       </ul>
     </div>
     <figure>
@@ -64,22 +65,6 @@
     </figure>
   </section>
 
-  <section class="trackers" id="trackers">
-    <p class="kicker">After you book</p>
-    <h2>Two trackers. One job.</h2>
-    <div class="pair">
-      <article>
-        <h3>Crew tracker</h3>
-        <p>For the phone that walks. Asks for precise location, draws the trail, and logs doors as they go up.</p>
-        <a href="track.html">Open crew tracker</a>
-      </article>
-      <article>
-        <h3>Customer view</h3>
-        <p>For the client. No GPS controls. Shows city, property type, doors finished, and the last trail the crew shared.</p>
-        <a href="watch.html">Open customer view</a>
-      </article>
-    </div>
-  </section>
 
   <section class="rates" id="rates">
     <div>
@@ -92,6 +77,8 @@
       <tr><th>Dallas</th><td>No out-of-area fee</td></tr>
       <tr><th>Any other booked city</th><td>$25 out-of-area fee</td></tr>
       <tr><th>1,000 doors or more</th><td>Out-of-area fee waived</td></tr>
+      <tr><th>Door hangers</th><td>On the handle</td></tr>
+      <tr><th>Door cards</th><td>Left at the door / porch</td></tr>
       <tr><th>Printing</th><td>Not included</td></tr>
       <tr><th>Coverage</th><td>Cities within 30 minutes of Dallas</td></tr>
     </table>
@@ -124,11 +111,11 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <svg id="bookMap" role="img" aria-label="Dallas service map"></svg>
+          <div id="bookMap" style="height:420px;min-height:320px"></div>
           <div class="map-tools">
             <button type="button" id="drawBtn">Draw my route</button>
             <button type="button" id="clearDraw">Clear line</button>
-            <p id="mapHint">Click a city. The map is built into this site.</p>
+            <p id="mapHint">Zoom in to see streets and houses. Switch Streets or Satellite. Click a pin or draw the route.</p>
           </div>
         </div>
         <form id="bookForm">
@@ -139,8 +126,14 @@
           <p class="fine" id="areaNote">Home base.</p>
           <fieldset class="kind">
             <legend>Property</legend>
-            <label><input type="radio" name="kind" value="house" checked /> Houses · 35¢</label>
-            <label><input type="radio" name="kind" value="apartment" /> Apartments · 30¢</label>
+            <label><input type="radio" name="kind" value="house" checked /> Houses</label>
+            <label><input type="radio" name="kind" value="apartment" /> Apartments</label>
+          </fieldset>
+          <fieldset class="kind">
+            <legend>Piece</legend>
+            <label><input type="radio" name="piece" value="hanger" checked /> Door hangers</label>
+            <label><input type="radio" name="piece" value="card" /> Door cards</label>
+            <label><input type="radio" name="piece" value="both" /> Both</label>
           </fieldset>
           <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
           <div class="estimate" id="estimate"></div>
@@ -149,15 +142,16 @@
       </div>
       <div class="done" id="bookDone" hidden>
         <h3>Job is ready.</h3>
-        <p>Send the crew the hanger link. Keep the customer link for yourself.</p>
+        <p>These two links are only for this job. Do not post them. One is the walking phone. One is the customer view.</p>
         <a class="btn navy full" id="crewLink" href="track.html">Open crew tracker</a>
         <a class="btn full" id="custLink" href="watch.html">Open customer view</a>
       </div>
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="data.js"></script>
-  <script src="map.js"></script>
+  <script src="streets.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

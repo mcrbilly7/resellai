@@ -1,10 +1,20 @@
-function makeStreetMap(el) {
-  const map = L.map(el, { zoomControl: true }).setView([32.7767, -96.7970], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+function streetLayers() {
+  const streets = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap"
-  }).addTo(map);
-  return { map: map, line: null, here: null, path: null };
+  });
+  const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19,
+    attribution: "Tiles &copy; Esri"
+  });
+  return { streets: streets, satellite: satellite };
+}
+
+function makeStreetMap(el) {
+  const layers = streetLayers();
+  const map = L.map(el, { zoomControl: true, layers: [layers.streets] }).setView([32.7767, -96.7970], 13);
+  L.control.layers({ Streets: layers.streets, Satellite: layers.satellite }).addTo(map);
+  return { map: map, line: null, here: null, markers: [] };
 }
 
 function paintStreets(view, job) {
@@ -19,7 +29,7 @@ function paintStreets(view, job) {
     } else {
       view.here.setLatLng(job.here);
     }
-    view.map.setView(job.here, Math.max(view.map.getZoom(), 16));
+    view.map.setView(job.here, Math.max(view.map.getZoom(), 17));
   } else if (path.length) {
     view.map.fitBounds(L.latLngBounds(path), { padding: [24, 24] });
   }
