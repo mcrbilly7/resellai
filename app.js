@@ -28,27 +28,14 @@ function saveInbox(row) {
   } catch (err) {}
 }
 
+function showGoogle(lat, lng, zoom, label) {
+  const frame = document.getElementById("bookMap");
+  if (!frame) return;
+  const q = (label ? encodeURIComponent(label) : (lat + "," + lng));
+  frame.src = "https://maps.google.com/maps?q=" + q + "&ll=" + lat + "," + lng + "&z=" + (zoom || 16) + "&hl=en&t=m&output=embed";
+}
 function ensureMap() {
-  if (map) {
-    setTimeout(function () { map.invalidateSize(); }, 150);
-    return map;
-  }
-  map = makeGoogleMap("bookMap", selected.lat, selected.lng, 16);
-  map.on("click", function (e) {
-    if (!drawing) return;
-    corners.push([e.latlng.lat, e.latlng.lng]);
-    if (layers.line) map.removeLayer(layers.line);
-    layers.line = L.polyline(corners, { color: "#0f2744", weight: 5 }).addTo(map);
-    if (corners.length >= 2) {
-      const c = countAlong(geo, corners);
-      lastPick = { houses: c.houses, apts: c.apts, path: corners.slice(), streets: ["custom"] };
-      updatePrice();
-      mapHint.textContent = c.houses + " houses and " + c.apts + " apartments on that stretch. Click the next corner or a listed street.";
-    } else {
-      mapHint.textContent = "First corner set. Click the opposite corner of the street.";
-    }
-  });
-  return map;
+  showGoogle(selected.lat, selected.lng, 15, selected.name + ", TX");
 }
 
 function updatePrice() {
@@ -88,9 +75,8 @@ function renderRouteList() {
       b.classList.add("on");
       corners = s.path.slice();
       lastPick = { houses: s.houses, apts: s.apts, path: s.path.slice(), streets: [s.name] };
-      if (layers.line) map.removeLayer(layers.line);
-      layers.line = L.polyline(s.path, { color: "#0f2744", weight: 5 }).addTo(map);
-      if (s.path.length > 1) map.fitBounds(L.latLngBounds(s.path), { padding: [28, 28], maxZoom: 18 });
+      const mid = s.path[Math.floor(s.path.length/2)] || [selected.lat, selected.lng];
+      showGoogle(mid[0], mid[1], 17, s.name + ", " + selected.name + ", TX");
       updatePrice();
       mapHint.textContent = s.name + " · gold dots houses · navy dots apartments.";
     });
@@ -106,7 +92,7 @@ async function loadCity() {
   }
   selected = match;
   ensureMap();
-  map.setView([match.lat, match.lng], 16);
+  showGoogle(match.lat, match.lng, 15, match.name + ", TX");
   mapHint.textContent = "Loading streets and doors in " + match.name + "…";
   try {
     geo = await loadCityGeo(match);
@@ -114,7 +100,6 @@ async function loadCity() {
     geo = { streets: [], houses: [], apts: [] };
     mapHint.textContent = "Door overlay is slow. Google map is live — click corners to draw your route.";
   }
-  drawBuildings(map, geo, layers);
   premade = twentyRoutes(geo, match);
   renderRouteList();
   const first = document.querySelector("#routeList button");
@@ -142,18 +127,13 @@ modal.addEventListener("click", function (e) { if (e.target === modal) closeBook
 cityInput.addEventListener("change", loadCity);
 
 document.getElementById("drawBtn").addEventListener("click", function () {
-  drawing = !drawing;
-  document.getElementById("drawBtn").classList.toggle("on", drawing);
-  corners = [];
-  mapHint.textContent = drawing
-    ? "Click one corner of the street, then the other corner. Keep clicking down the block."
-    : "Corner drawing off.";
+  mapHint.textContent = "Use Google search inside the map, or tap a listed street. That street loads on Google Maps.";
 });
 document.getElementById("clearDraw").addEventListener("click", function () {
   drawing = false;
   corners = [];
   lastPick = { houses: 0, apts: 0, path: [], streets: [] };
-  if (layers.line) { map.removeLayer(layers.line); layers.line = null; }
+
   document.getElementById("drawBtn").classList.remove("on");
   updatePrice();
 });
