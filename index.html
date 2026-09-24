@@ -145,21 +145,30 @@
           </fieldset>
           <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
           <div class="estimate" id="estimate"></div>
-          <button class="btn navy full" type="submit">Create job links</button>
+          <label>Your name <input id="bookName" name="name" required /></label>
+          <label>Phone <input id="bookPhone" name="phone" type="tel" required /></label>
+          <label>Email <input id="bookEmail" name="email" type="email" required /></label>
+          <fieldset class="kind">
+            <legend>After we confirm, send my tracker by</legend>
+            <label><input type="radio" name="sendvia" value="text" checked /> Text</label>
+            <label><input type="radio" name="sendvia" value="email" /> Email</label>
+            <label><input type="radio" name="sendvia" value="both" /> Text and email</label>
+          </fieldset>
+          <button class="btn navy full" type="submit">Request booking</button>
         </form>
       </div>
       <div class="done" id="bookDone" hidden>
-        <h3>Job is ready.</h3>
-        <p>These two links are only for this job. Do not post them. One is the walking phone. One is the customer view.</p>
-        <a class="btn navy full" id="crewLink" href="track.html">Open crew tracker</a>
-        <a class="btn full" id="custLink" href="watch.html">Open customer view</a>
+        <h3>Request sent.</h3>
+        <p id="bookDoneNote">We will confirm the booking first. Then we send the customer tracker by the method you picked. You will not get a public tracking page until we approve it.</p>
+        <a class="btn navy full" href="phone.html">Call the shop</a>
+        <a class="btn full" href="email.html">Email the shop</a>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="data.js"></script>
-  <script src="streets.js"></script>
-  <script src="app.js"></script>
+  <script src="data.js?v=3"></script>
+  <script src="maps-v3.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

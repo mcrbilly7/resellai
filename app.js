@@ -123,7 +123,7 @@ document.getElementById("clearDraw").addEventListener("click", () => {
   drawPath();
 });
 
-document.getElementById("bookForm").addEventListener("submit", (e) => {
+document.getElementById("bookForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const match = CITIES.find((c) => c.name.toLowerCase() === cityInput.value.trim().toLowerCase());
   if (!match) {
@@ -131,6 +131,11 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
     return;
   }
   const kind = (document.querySelector('input[name="kind"]:checked') || {}).value || "house";
+  const piece = (document.querySelector('input[name="piece"]:checked') || {}).value || "hanger";
+  const sendvia = (document.querySelector('input[name="sendvia"]:checked') || {}).value || "text";
+  const name = (document.getElementById("bookName") || {}).value || "";
+  const phone = (document.getElementById("bookPhone") || {}).value || "";
+  const email = (document.getElementById("bookEmail") || {}).value || "";
   const p = priceFor(doorsInput.value, match.name, kind);
   if (!p.qty) return;
   const job = {
@@ -138,7 +143,11 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
     city: match.name,
     mins: match.mins,
     kind: p.kind,
-    piece: (document.querySelector('input[name="piece"]:checked') || {}).value || "hanger",
+    piece: piece,
+    sendvia: sendvia,
+    name: name,
+    phone: phone,
+    email: email,
     rate: p.rate,
     doors: p.qty,
     total: p.total,
@@ -150,10 +159,40 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
   };
   saveJob(job);
   const hash = "#" + encodeJob(job);
+  const base = location.origin + location.pathname.replace(/index\.html$/, "");
+  const crew = base + "track.html" + hash;
+  const customer = base + "watch.html" + hash;
+  const payload = {
+    _subject: "Nossonk booking request — confirm then send tracker",
+    name: name,
+    phone: phone,
+    email: email,
+    send_tracker_by: sendvia,
+    city: match.name,
+    property: p.kind,
+    piece: piece,
+    doors: String(p.qty),
+    estimate: money(p.total),
+    crew_link: crew,
+    customer_link: customer,
+    note: "Confirm this job first. Then text and/or email the CUSTOMER link only. Keep the crew link on the walking phone."
+  };
+  try {
+    await fetch("https://formsubmit.co/ajax/noskotx@gmail.com", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    const body = encodeURIComponent(Object.keys(payload).map((k) => k + ": " + payload[k]).join("\n"));
+    location.href = "mailto:noskotx@gmail.com?subject=" + encodeURIComponent(payload._subject) + "&body=" + body;
+  }
+  const note = document.getElementById("bookDoneNote");
+  if (note) {
+    note.textContent = "We will confirm first. Then we send your tracker by " + (sendvia === "both" ? "text and email" : sendvia) + ".";
+  }
   document.getElementById("bookStep").hidden = true;
   document.getElementById("bookDone").hidden = false;
-  document.getElementById("crewLink").href = "track.html" + hash;
-  document.getElementById("custLink").href = "watch.html" + hash;
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
