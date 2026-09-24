@@ -4,67 +4,279 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Admin</title>
+  <title>Shop desk — Nossonk LLC</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .desk { max-width: 980px; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
+    .desk h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+    .desk-top { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-end; margin-bottom: 1.4rem; }
+    .tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .tabs button { border: 1px solid var(--line); background: #fff; padding: 0.45rem 0.8rem; cursor: pointer; font: inherit; }
+    .tabs button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .job {
+      background: #fff;
+      border: 1px solid var(--line);
+      padding: 1.1rem 1.2rem 1.2rem;
+      margin: 0 0 0.9rem;
+    }
+    .job header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+    .job h2 { margin: 0; font-size: 1.25rem; }
+    .badge { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.2rem 0.5rem; border: 1px solid var(--line); }
+    .badge.new { background: #f3e3b8; }
+    .badge.confirmed { background: #d7ead4; }
+    .badge.sent { background: #d5e2f3; }
+    .badge.done { background: #eceae4; color: var(--muted); }
+    .meta { color: var(--muted); font-size: 0.95rem; margin: 0.35rem 0 0.8rem; }
+    .acts { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .acts a, .acts button {
+      display: inline-block;
+      border: 1px solid var(--navy);
+      background: #fff;
+      color: var(--navy);
+      padding: 0.55rem 0.8rem;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .acts .main { background: var(--navy); color: #fff; }
+    .acts .soft { border-color: var(--line); color: var(--muted); }
+    .empty { background: #fff; border: 1px dashed var(--line); padding: 1.4rem; }
+    .gatebox { max-width: 420px; }
+    .toast {
+      position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+      background: var(--navy); color: #fff; padding: 0.7rem 1rem; display: none; z-index: 40;
+    }
+    .add { background: #fff; border: 1px solid var(--line); padding: 1rem; margin-top: 1.4rem; }
+    .add form { display: grid; gap: 0.6rem; grid-template-columns: 1fr 1fr; }
+    .add label { font-size: 0.85rem; color: var(--muted); }
+    .add input { width: 100%; padding: 0.55rem; font: inherit; border: 1px solid var(--line); }
+    .add .wide { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .add form { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <header class="bar">
     <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="Nossonk LLC" /></a>
-    <span class="role">Admin</span>
+    <span class="role">Shop desk</span>
   </header>
-  <section class="contact" id="gate">
-    <div>
-      <p class="kicker">Shop</p>
-      <h1>Admin</h1>
-      <p>Booking requests from this site land here and in noskotx@gmail.com.</p>
-    </div>
+
+  <section class="desk gatebox" id="gate">
+    <p class="kicker">Shop only</p>
+    <h1>Open the desk</h1>
+    <p>Bookings from this browser show here. Email still goes to noskotx@gmail.com.</p>
     <form id="login">
-      <label>Password <input id="pw" type="password" required /></label>
-      <button class="btn navy" type="submit">Open inbox</button>
+      <label>Password
+        <input id="pw" type="password" autocomplete="current-password" required />
+      </label>
+      <p><button class="btn navy" type="submit">Open desk</button></p>
+      <p id="loginErr" class="fine" hidden>Wrong password. Try Bigbilly101!</p>
     </form>
   </section>
-  <section class="contact" id="inbox" hidden>
-    <div>
-      <p class="kicker">Inbox</p>
-      <h1>Booking requests</h1>
-      <p id="inboxCount"></p>
-      <a class="btn" href="shop.html">Send a customer tracker</a>
+
+  <section class="desk" id="inbox" hidden>
+    <div class="desk-top">
+      <div>
+        <p class="kicker">Desk</p>
+        <h1>Jobs</h1>
+        <p id="inboxCount">Loading…</p>
+      </div>
+      <div class="tabs" id="tabs">
+        <button type="button" data-filter="all" class="on">All</button>
+        <button type="button" data-filter="new">New</button>
+        <button type="button" data-filter="confirmed">Confirmed</button>
+        <button type="button" data-filter="sent">Sent</button>
+        <button type="button" data-filter="done">Done</button>
+      </div>
     </div>
     <div id="rows"></div>
+    <div class="add">
+      <h3>Add a job by hand</h3>
+      <p class="fine">Use this if the customer called or the website booking is only in email.</p>
+      <form id="addJob">
+        <label>Name <input name="name" required /></label>
+        <label>Phone <input name="phone" type="tel" required /></label>
+        <label>Email <input name="email" type="email" /></label>
+        <label>City <input name="city" list="cityList" value="Dallas" required /></label>
+        <label>Houses <input name="houses" type="number" min="0" value="0" /></label>
+        <label>Apartments <input name="apts" type="number" min="0" value="0" /></label>
+        <label class="wide">Send tracker by
+          <select name="sendvia">
+            <option value="text">Text</option>
+            <option value="email">Email</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+        <p class="wide"><button class="btn navy" type="submit">Save job</button></p>
+      </form>
+      <datalist id="cityList"></datalist>
+    </div>
   </section>
-  <script src="data.js?v=8"></script>
-  <script src="buildings.js?v=8"></script>
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js?v=12"></script>
   <script>
     const PASS = "Bigbilly101!";
+    const KEY = "noskotx-inbox";
+    let filter = "all";
+
+    function loadInbox() {
+      try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
+      catch (e) { return []; }
+    }
+    function saveInboxList(list) {
+      localStorage.setItem(KEY, JSON.stringify(list.slice(0, 250)));
+    }
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      setTimeout(() => { el.style.display = "none"; }, 2200);
+    }
+    function links(job) {
+      const hash = "#" + encodeJob(job);
+      const base = location.origin + location.pathname.replace(/admin\.html$/, "");
+      return {
+        crew: base + "track.html" + hash,
+        customer: base + "watch.html" + hash
+      };
+    }
+    function setStatus(id, status) {
+      const list = loadInbox().map((j) => j.id === id ? Object.assign({}, j, { status: status }) : j);
+      saveInboxList(list);
+      render();
+    }
+    function removeJob(id) {
+      saveInboxList(loadInbox().filter((j) => j.id !== id));
+      render();
+    }
+    function copy(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => toast("Copied")).catch(() => toast(text));
+      } else {
+        toast(text);
+      }
+    }
+    function when(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString(); } catch (e) { return ""; }
+    }
+    function render() {
+      const all = loadInbox();
+      const list = filter === "all" ? all : all.filter((j) => (j.status || "new") === filter);
+      document.getElementById("inboxCount").textContent =
+        all.length ? all.length + " job" + (all.length === 1 ? "" : "s") + " on this phone." : "No jobs stored on this phone yet. Add one below or book a route on the site.";
+      const box = document.getElementById("rows");
+      box.innerHTML = "";
+      if (!list.length) {
+        box.innerHTML = '<div class="empty"><p>Nothing in this tab.</p><p><a class="btn navy" href="index.html">Book a test route</a></p></div>';
+        return;
+      }
+      list.forEach((job) => {
+        const status = job.status || "new";
+        const L = links(job);
+        const mix = priceMix(job.houses || 0, job.apts || 0, job.city || "Dallas");
+        const art = document.createElement("article");
+        art.className = "job";
+        art.innerHTML =
+          "<header><h2>" + (job.name || "No name") + "</h2><span class='badge " + status + "'>" + status + "</span></header>" +
+          "<p class='meta'>" + (job.city || "") + " · " + mix.houses + " houses · " + mix.apts + " apartments · " +
+          mix.doors + " doors · " + money(mix.total) + "<br/>" +
+          (job.phone || "no phone") + " · " + (job.email || "no email") + "<br/>" +
+          "Tracker by " + (job.sendvia || "text") + " · " + (job.piece || "hanger") +
+          (when(job.created) ? "<br/>" + when(job.created) : "") + "</p>" +
+          "<div class='acts'></div>";
+        const acts = art.querySelector(".acts");
+        function addA(label, href, cls) {
+          const a = document.createElement("a");
+          a.textContent = label;
+          a.href = href;
+          if (cls) a.className = cls;
+          acts.appendChild(a);
+        }
+        function addB(label, fn, cls) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.textContent = label;
+          if (cls) b.className = cls;
+          b.addEventListener("click", fn);
+          acts.appendChild(b);
+        }
+        if (job.phone) {
+          addA("Call", "tel:" + job.phone, "main");
+          addA("Text", "sms:" + job.phone + "?body=" + encodeURIComponent("Nossonk LLC: we confirmed your route. Track it here " + L.customer));
+        }
+        if (job.email) {
+          addA("Email", "mailto:" + job.email + "?subject=" + encodeURIComponent("Your Nossonk route is confirmed") +
+            "&body=" + encodeURIComponent("Thanks, we confirmed your route. Track the hangers here:\n" + L.customer + "\n\nNossonk LLC\n(945) 239-5974"));
+        }
+        addB("Copy customer link", () => copy(L.customer), "main");
+        addA("Open crew tracker", L.crew);
+        addA("Open customer tracker", L.customer);
+        addB("Mark confirmed", () => { setStatus(job.id, "confirmed"); toast("Marked confirmed"); });
+        addB("Mark sent", () => { setStatus(job.id, "sent"); toast("Marked sent"); });
+        addB("Mark done", () => { setStatus(job.id, "done"); toast("Marked done"); });
+        addB("Remove", () => { if (confirm("Remove this job?")) removeJob(job.id); }, "soft");
+        box.appendChild(art);
+      });
+    }
+
+    function openInbox() {
+      document.getElementById("gate").hidden = true;
+      document.getElementById("inbox").hidden = false;
+      render();
+    }
+
     document.getElementById("login").addEventListener("submit", (e) => {
       e.preventDefault();
       if (document.getElementById("pw").value !== PASS) {
-        alert("Wrong password.");
+        document.getElementById("loginErr").hidden = false;
         return;
       }
       sessionStorage.setItem("noskotx-admin", "1");
       openInbox();
     });
-    if (sessionStorage.getItem("noskotx-admin") === "1") openInbox();
-    function openInbox() {
-      document.getElementById("gate").hidden = true;
-      document.getElementById("inbox").hidden = false;
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-filter]");
+      if (!btn) return;
+      filter = btn.getAttribute("data-filter");
+      document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b === btn));
+      render();
+    });
+    CITIES.forEach((c) => {
+      const o = document.createElement("option");
+      o.value = c.name;
+      document.getElementById("cityList").appendChild(o);
+    });
+    document.getElementById("addJob").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const houses = parseInt(fd.get("houses"), 10) || 0;
+      const apts = parseInt(fd.get("apts"), 10) || 0;
+      const mix = priceMix(houses, apts, fd.get("city"));
+      const job = {
+        id: uid(),
+        name: fd.get("name"),
+        phone: fd.get("phone"),
+        email: fd.get("email"),
+        city: fd.get("city"),
+        houses: houses,
+        apts: apts,
+        doors: mix.doors,
+        total: mix.total,
+        sendvia: fd.get("sendvia"),
+        piece: "hanger",
+        status: "new",
+        created: Date.now()
+      };
       const list = loadInbox();
-      document.getElementById("inboxCount").textContent = list.length ? list.length + " request(s)." : "No requests on this device yet. New website bookings save here and also email the shop.";
-      const box = document.getElementById("rows");
-      box.innerHTML = "";
-      list.forEach((job) => {
-        const art = document.createElement("article");
-        art.style.cssText = "background:#fff;border:1px solid #ddd;padding:1rem;margin:0 0 0.8rem";
-        art.innerHTML = "<b>" + (job.name || "No name") + "</b><br/>" +
-          (job.phone || "") + " · " + (job.email || "") + "<br/>" +
-          (job.city || "") + " · " + (job.houses || 0) + " houses · " + (job.apts || 0) + " apartments · " +
-          (job.doors || 0) + " doors · " + (job.total != null ? money(job.total) : "") + "<br/>" +
-          "Send tracker by " + (job.sendvia || "") + " · " + (job.piece || "") + "<br/>" +
-          (job.streets && job.streets.join ? job.streets.join(", ") : "");
-        box.appendChild(art);
-      });
-    }
+      list.unshift(job);
+      saveInboxList(list);
+      e.target.reset();
+      toast("Job saved");
+      render();
+    });
+    if (sessionStorage.getItem("noskotx-admin") === "1") openInbox();
   </script>
 </body>
 </html>
