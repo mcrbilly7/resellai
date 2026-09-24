@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -119,13 +120,12 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <iframe id="bookMap" title="Residential streets" style="width:100%;height:440px;border:0;display:block;background:#dce6d8"
-            src="https://maps.google.com/maps?q=32.7767,-96.7970&z=15&hl=en&t=m&output=embed"></iframe>
+          <div id="bookMap" style="height:440px;min-height:360px;background:#efe8d8"></div>
           <div class="map-tools">
-            <button type="button" id="loadRoute">Show city route</button>
+            <button type="button" id="loadRoute">Load city streets</button>
             <button type="button" id="drawBtn">Click corners</button>
             <button type="button" id="clearDraw">Clear</button>
-            <p id="mapHint">Esri street map. Gold = houses. Navy = apartments. Pick a premade residential route below, or click street corners.</p>
+            <p id="mapHint">No third-party map tiles. Gold dots are houses. Navy dots are apartments. Click a street below, or click corners, then click doors.</p>
           </div>
           <div class="route-list" id="routeList"></div>
         </div>
@@ -166,9 +166,9 @@
     </div>
   </div>
 
-  <script src="data.js?v=10"></script>
-  <script src="maps-v3.js?v=10"></script>
-  <script src="buildings.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data.js?v=11"></script>
+  <script src="clickmap.js?v=11"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
