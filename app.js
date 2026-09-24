@@ -42,11 +42,13 @@ function updatePrice() {
     return;
   }
   if (match) selected = match;
-  const p = priceFor(doorsInput.value, match ? match.name : "");
+  const kind = (document.querySelector('input[name="kind"]:checked') || {}).value || "house";
+  const p = priceFor(doorsInput.value, match ? match.name : "", kind);
+  const kindLine = p.kind === "apartment" ? "apartments at 30¢" : "houses at 35¢";
   const travelLine = p.travel
     ? money(TRAVEL_FEE) + " out-of-area fee"
     : (isDallas(p.city) ? "Dallas · no travel fee" : "travel waived at 1,000 doors");
-  estimate.innerHTML = "<b>" + money(p.total) + "</b><span>" + p.qty.toLocaleString() + " doors in " + (p.city || "—") + " · " + travelLine + "</span>";
+  estimate.innerHTML = "<b>" + money(p.total) + "</b><span>" + p.qty.toLocaleString() + " " + kindLine + " in " + (p.city || "—") + " · " + travelLine + "</span>";
   box.textContent = match ? (match.name === "Dallas" ? "Home base." : "About " + match.mins + " minutes from Dallas · $25 fee unless 1,000 doors.") : "";
 }
 
@@ -67,6 +69,7 @@ modal.addEventListener("click", (e) => { if (e.target === modal) closeBook(); })
 
 cityInput.addEventListener("input", updatePrice);
 doorsInput.addEventListener("input", updatePrice);
+document.querySelectorAll('input[name="kind"]').forEach((el) => el.addEventListener("change", updatePrice));
 
 document.getElementById("drawBtn").addEventListener("click", () => {
   drawing = !drawing;
@@ -100,12 +103,15 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
     mapHint.textContent = "Choose a listed city within 30 minutes of Dallas.";
     return;
   }
-  const p = priceFor(doorsInput.value, match.name);
+  const kind = (document.querySelector('input[name="kind"]:checked') || {}).value || "house";
+  const p = priceFor(doorsInput.value, match.name, kind);
   if (!p.qty) return;
   const job = {
     id: uid(),
     city: match.name,
     mins: match.mins,
+    kind: p.kind,
+    rate: p.rate,
     doors: p.qty,
     total: p.total,
     travel: p.travel,

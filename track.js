@@ -30,7 +30,8 @@ function renderStats() {
     document.getElementById("jobTitle").textContent = "No job loaded";
     return;
   }
-  document.getElementById("jobTitle").textContent = job.city + " · " + job.doors.toLocaleString() + " doors";
+  const kind = job.kind === "apartment" ? "apartments" : "houses";
+  document.getElementById("jobTitle").textContent = job.city + " · " + job.doors.toLocaleString() + " " + kind;
   document.getElementById("statDone").textContent = (job.done || 0).toLocaleString();
   document.getElementById("statGoal").textContent = job.doors.toLocaleString();
   const pct = job.doors ? Math.min(100, Math.round((job.done || 0) / job.doors * 100)) : 0;

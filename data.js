@@ -1,4 +1,5 @@
-const RATE = 0.25;
+const RATE_HOUSE = 0.35;
+const RATE_APARTMENT = 0.30;
 const TRAVEL_FEE = 25;
 const WAIVE_AT = 1000;
 
@@ -48,11 +49,16 @@ function isDallas(city) {
   return String(city || "").trim().toLowerCase() === "dallas";
 }
 
-function priceFor(doors, city) {
+function rateFor(kind) {
+  return kind === "apartment" ? RATE_APARTMENT : RATE_HOUSE;
+}
+
+function priceFor(doors, city, kind) {
   const qty = Math.max(0, Math.floor(Number(doors) || 0));
-  const dist = qty * RATE;
+  const rate = rateFor(kind);
+  const dist = qty * rate;
   const travel = isDallas(city) || qty >= WAIVE_AT ? 0 : TRAVEL_FEE;
-  return { qty, dist, travel, total: dist + travel, city: city || "" };
+  return { qty, rate, kind: kind === "apartment" ? "apartment" : "house", dist, travel, total: dist + travel, city: city || "" };
 }
 
 function money(n) {

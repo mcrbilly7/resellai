@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nossonk LLC — Door hangers within 30 minutes of Dallas</title>
-  <meta name="description" content="Nossonk LLC hangs door hangers across cities within 30 minutes of Dallas. 25¢ per door. $25 out-of-area fee, waived at 1,000 doors." />
+  <meta name="description" content="Nossonk LLC hangs door hangers within 30 minutes of Dallas. 35¢ per house, 30¢ per apartment. $25 out-of-area fee, waived at 1,000 doors." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -33,9 +33,9 @@
   </section>
 
   <section class="facts">
-    <div><b>25¢</b> per door</div>
+    <div><b>35¢</b> per house</div>
+    <div><b>30¢</b> per apartment</div>
     <div><b>$25</b> out-of-area fee</div>
-    <div><b>$0</b> fee in Dallas</div>
     <div><b>$0</b> fee at 1,000 doors</div>
   </section>
 
@@ -55,7 +55,8 @@
   <section class="rates" id="rates">
     <h2>Rates</h2>
     <table>
-      <tr><th>Distribution</th><td>25¢ per door</td></tr>
+      <tr><th>Houses</th><td>35¢ per door</td></tr>
+      <tr><th>Apartments</th><td>30¢ per door</td></tr>
       <tr><th>Dallas</th><td>No travel fee</td></tr>
       <tr><th>Any other booked city</th><td>$25 out-of-area fee</td></tr>
       <tr><th>1,000 doors or more</th><td>Out-of-area fee waived</td></tr>
@@ -100,6 +101,11 @@
             <datalist id="cityList"></datalist>
           </label>
           <p class="fine" id="areaNote">Home base.</p>
+          <fieldset class="kind">
+            <legend>Property</legend>
+            <label><input type="radio" name="kind" value="house" checked /> Houses · 35¢</label>
+            <label><input type="radio" name="kind" value="apartment" /> Apartments · 30¢</label>
+          </fieldset>
           <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
           <div class="estimate" id="estimate"></div>
           <button class="btn dark full" type="submit">Save job & open tracker</button>

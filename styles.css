@@ -134,6 +134,10 @@ footer { padding: 1.2rem; border-top: 1px solid var(--line); color: var(--muted)
 }
 .map-tools button.on { background: var(--green); color: #fff; border-color: var(--green); }
 #bookForm { padding: 1rem; }
+.kind { border: 1px solid var(--line); padding: 0.6rem 0.7rem; margin: 0.6rem 0; }
+.kind legend { padding: 0 0.3rem; color: var(--muted); font-size: 0.85rem; }
+.kind label { display: block; color: var(--ink); margin: 0.25rem 0; }
+.kind input { width: auto; margin-right: 0.4rem; }
 .estimate { background: #fff; border: 1px solid var(--line); padding: 0.8rem; margin: 0.8rem 0; }
 .estimate b { display: block; font-size: 1.6rem; }
 .estimate span, .fine { color: var(--muted); font-size: 0.85rem; }
