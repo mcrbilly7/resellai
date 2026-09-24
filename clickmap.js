@@ -1,27 +1,23 @@
 let CITYMAPS = null;
-let clickMap = null;
-let streetLayer = null;
-let houseLayer = null;
-let aptLayer = null;
-let drawLayer = null;
 let drawing = false;
 let corners = [];
 let picked = { houses: {}, apts: {} };
 let currentCity = "Dallas";
 let onChange = function () {};
+let svg = null;
+let view = { minLat: 0, maxLat: 0, minLng: 0, maxLng: 0 };
 
 function distM(a, b) {
   const dLat = (a[0] - b[0]) * 111320;
-  const dLng = (a[1] - b[1]) * 111320 * Math.cos(a[0] * Math.PI / 180);
+  const dLng = (a[1] - b[1]) * 111320 * Math.cos((a[0] * Math.PI) / 180);
   return Math.sqrt(dLat * dLat + dLng * dLng);
 }
 
 function nearLine(pt, path, maxM) {
   for (let i = 1; i < path.length; i++) {
     const a = path[i - 1], b = path[i];
-    const steps = 8;
-    for (let s = 0; s <= steps; s++) {
-      const t = s / steps;
+    for (let s = 0; s <= 10; s++) {
+      const t = s / 10;
       const q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
       if (distM(pt, q) <= maxM) return true;
     }
@@ -36,55 +32,7 @@ async function loadCityMaps() {
   return CITYMAPS;
 }
 
-function initClickMap(elId, changeFn) {
-  onChange = changeFn || onChange;
-  if (clickMap) {
-    setTimeout(function () { clickMap.invalidateSize(); }, 200);
-    return clickMap;
-  }
-  clickMap = L.map(elId, { zoomControl: true, attributionControl: false }).setView([32.7767, -96.7970], 14);
-  clickMap.getContainer().style.background = "#efe8d8";
-  clickMap.on("click", function (e) {
-    if (!drawing) return;
-    corners.push([e.latlng.lat, e.latlng.lng]);
-    paintDraw();
-    if (corners.length >= 2) selectAlong(corners);
-  });
-  setTimeout(function () { clickMap.invalidateSize(); }, 250);
-  return clickMap;
-}
-
-function paintDraw() {
-  if (drawLayer) clickMap.removeLayer(drawLayer);
-  if (!corners.length) return;
-  drawLayer = L.layerGroup();
-  corners.forEach(function (c) {
-    L.circleMarker(c, { radius: 6, color: "#0f2744", fillColor: "#fff", fillOpacity: 1, weight: 2 }).addTo(drawLayer);
-  });
-  if (corners.length > 1) L.polyline(corners, { color: "#0f2744", weight: 4 }).addTo(drawLayer);
-  drawLayer.addTo(clickMap);
-}
-
-function markerOpts(kind, on) {
-  return {
-    radius: on ? 7 : 5,
-    color: on ? "#111" : "#fff",
-    weight: on ? 2 : 1,
-    fillColor: kind === "apt" ? "#0f2744" : "#c4a056",
-    fillOpacity: 1
-  };
-}
-
 function keyOf(pt) { return pt[0] + "," + pt[1]; }
-
-function toggle(kind, pt, marker) {
-  const bag = kind === "apt" ? picked.apts : picked.houses;
-  const k = keyOf(pt);
-  if (bag[k]) delete bag[k];
-  else bag[k] = pt;
-  marker.setStyle(markerOpts(kind, !!bag[k]));
-  onChange(getPicked());
-}
 
 function getPicked() {
   return {
@@ -95,83 +43,153 @@ function getPicked() {
   };
 }
 
+function project(pt) {
+  const x = ((pt[1] - view.minLng) / (view.maxLng - view.minLng)) * 1000;
+  const y = (1 - (pt[0] - view.minLat) / (view.maxLat - view.minLat)) * 700;
+  return [x, y];
+}
+
+function unproject(x, y) {
+  const lng = view.minLng + (x / 1000) * (view.maxLng - view.minLng);
+  const lat = view.minLat + (1 - y / 700) * (view.maxLat - view.minLat);
+  return [lat, lng];
+}
+
+function initClickMap(elId, changeFn) {
+  onChange = changeFn || onChange;
+  const host = document.getElementById(elId);
+  if (!host) return;
+  host.innerHTML = "";
+  host.style.background = "#e7f0e2";
+  host.style.border = "1px solid #cfc6b3";
+  svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 1000 700");
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  svg.style.display = "block";
+  svg.style.cursor = "crosshair";
+  host.appendChild(svg);
+  svg.addEventListener("click", function (e) {
+    if (!drawing) return;
+    const r = svg.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 1000;
+    const y = ((e.clientY - r.top) / r.height) * 700;
+    corners.push(unproject(x, y));
+    paint();
+    if (corners.length >= 2) selectAlong(corners);
+  });
+}
+
+function paint() {
+  const data = CITYMAPS && CITYMAPS[currentCity];
+  if (!svg || !data) return;
+  svg.innerHTML = "";
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bg.setAttribute("width", "1000");
+  bg.setAttribute("height", "700");
+  bg.setAttribute("fill", "#e7f0e2");
+  svg.appendChild(bg);
+  data.streets.forEach(function (s) {
+    const d = s.path.map(function (p, i) {
+      const xy = project(p);
+      return (i ? "L" : "M") + xy[0].toFixed(1) + " " + xy[1].toFixed(1);
+    }).join(" ");
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    line.setAttribute("d", d);
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", "#6d5c3d");
+    line.setAttribute("stroke-width", "8");
+    line.setAttribute("stroke-linecap", "round");
+    line.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(line);
+    const mid = project(s.path[0]);
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", mid[0] + 8);
+    label.setAttribute("y", mid[1] - 8);
+    label.setAttribute("font-size", "18");
+    label.setAttribute("fill", "#3b2f1c");
+    label.textContent = s.name;
+    svg.appendChild(label);
+  });
+  if (corners.length > 1) {
+    const d = corners.map(function (p, i) {
+      const xy = project(p);
+      return (i ? "L" : "M") + xy[0].toFixed(1) + " " + xy[1].toFixed(1);
+    }).join(" ");
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    line.setAttribute("d", d);
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", "#0f2744");
+    line.setAttribute("stroke-width", "5");
+    svg.appendChild(line);
+  }
+  function dot(pt, kind) {
+    const xy = project(pt);
+    const on = kind === "apt" ? picked.apts[keyOf(pt)] : picked.houses[keyOf(pt)];
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", xy[0]);
+    c.setAttribute("cy", xy[1]);
+    c.setAttribute("r", on ? 7 : 5);
+    c.setAttribute("fill", kind === "apt" ? "#0f2744" : "#c4a056");
+    c.setAttribute("stroke", on ? "#111" : "#fff");
+    c.setAttribute("stroke-width", on ? 2 : 1);
+    c.style.cursor = "pointer";
+    c.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const bag = kind === "apt" ? picked.apts : picked.houses;
+      const k = keyOf(pt);
+      if (bag[k]) delete bag[k];
+      else bag[k] = pt;
+      paint();
+      onChange(getPicked());
+    });
+    svg.appendChild(c);
+  }
+  data.houses.forEach(function (pt) { dot(pt, "house"); });
+  data.apts.forEach(function (pt) { dot(pt, "apt"); });
+}
+
 function selectAlong(path) {
   const data = CITYMAPS[currentCity];
   if (!data) return;
-  houseLayer.eachLayer(function (m) {
-    const pt = [m.getLatLng().lat, m.getLatLng().lng];
-    if (nearLine(pt, path, 42)) {
-      picked.houses[keyOf(pt)] = pt;
-      m.setStyle(markerOpts("house", true));
-    }
-  });
-  aptLayer.eachLayer(function (m) {
-    const pt = [m.getLatLng().lat, m.getLatLng().lng];
-    if (nearLine(pt, path, 42)) {
-      picked.apts[keyOf(pt)] = pt;
-      m.setStyle(markerOpts("apt", true));
-    }
-  });
+  data.houses.forEach(function (pt) { if (nearLine(pt, path, 42)) picked.houses[keyOf(pt)] = pt; });
+  data.apts.forEach(function (pt) { if (nearLine(pt, path, 42)) picked.apts[keyOf(pt)] = pt; });
+  paint();
   onChange(getPicked());
 }
 
 function selectStreet(street) {
   corners = street.path.slice();
   picked = { houses: {}, apts: {} };
-  paintDraw();
   selectAlong(street.path);
-  if (street.path.length) clickMap.fitBounds(L.latLngBounds(street.path), { padding: [24, 24] });
 }
 
 function showCity(name) {
   currentCity = name;
   const data = CITYMAPS && CITYMAPS[name];
-  if (!clickMap || !data) return data;
-  if (streetLayer) clickMap.removeLayer(streetLayer);
-  if (houseLayer) clickMap.removeLayer(houseLayer);
-  if (aptLayer) clickMap.removeLayer(aptLayer);
+  if (!data) return data;
+  let minLat = 99, maxLat = -99, minLng = 99, maxLng = -99;
+  data.streets.forEach(function (s) {
+    s.path.forEach(function (p) {
+      minLat = Math.min(minLat, p[0]); maxLat = Math.max(maxLat, p[0]);
+      minLng = Math.min(minLng, p[1]); maxLng = Math.max(maxLng, p[1]);
+    });
+  });
+  const padLat = (maxLat - minLat) * 0.08 + 0.001;
+  const padLng = (maxLng - minLng) * 0.08 + 0.001;
+  view = { minLat: minLat - padLat, maxLat: maxLat + padLat, minLng: minLng - padLng, maxLng: maxLng + padLng };
   picked = { houses: {}, apts: {} };
   corners = [];
-  if (drawLayer) { clickMap.removeLayer(drawLayer); drawLayer = null; }
-  streetLayer = L.layerGroup();
-  data.streets.forEach(function (s) {
-    L.polyline(s.path, { color: "#8a7a5a", weight: 3, opacity: 0.9 }).addTo(streetLayer);
-  });
-  houseLayer = L.layerGroup();
-  data.houses.forEach(function (pt) {
-    const m = L.circleMarker(pt, markerOpts("house", false));
-    m.on("click", function (e) {
-      L.DomEvent.stopPropagation(e);
-      toggle("house", pt, m);
-    });
-    m.addTo(houseLayer);
-  });
-  aptLayer = L.layerGroup();
-  data.apts.forEach(function (pt) {
-    const m = L.circleMarker(pt, markerOpts("apt", false));
-    m.on("click", function (e) {
-      L.DomEvent.stopPropagation(e);
-      toggle("apt", pt, m);
-    });
-    m.addTo(aptLayer);
-  });
-  streetLayer.addTo(clickMap);
-  houseLayer.addTo(clickMap);
-  aptLayer.addTo(clickMap);
-  clickMap.setView([data.lat, data.lng], 14);
+  paint();
   onChange(getPicked());
   return data;
 }
 
-function setDrawing(on) {
-  drawing = !!on;
-}
+function setDrawing(on) { drawing = !!on; }
 
 function clearPick() {
   picked = { houses: {}, apts: {} };
   corners = [];
-  if (drawLayer) { clickMap.removeLayer(drawLayer); drawLayer = null; }
-  if (houseLayer) houseLayer.eachLayer(function (m) { m.setStyle(markerOpts("house", false)); });
-  if (aptLayer) aptLayer.eachLayer(function (m) { m.setStyle(markerOpts("apt", false)); });
+  paint();
   onChange(getPicked());
 }

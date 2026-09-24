@@ -190,7 +190,8 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
   };
   showBooked(sendvia, name);
   try {
-    await fetch("https://formsubmit.co/ajax/392d527d09be6d2ef7eba61b05686ad0", {
+    if (typeof sendShopMail === "function") await sendShopMail(payload);
+    else await fetch("https://formsubmit.co/ajax/392d527d09be6d2ef7eba61b05686ad0", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(payload)
