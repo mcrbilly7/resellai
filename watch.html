@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Customer view — Nossonk LLC</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <style>
     .log { list-style: none; padding: 0; margin: 1rem 0 0; max-height: 280px; overflow: auto; border-top: 1px solid var(--line, #ddd); }
@@ -31,11 +32,13 @@
       <h3>Hung so far</h3>
       <ul class="log" id="logList"></ul>
     </div>
-    <div class="map-pane tall"><svg id="watchMap" role="img" aria-label="Customer map"></svg></div>
+    <div class="map-pane tall"><div id="watchMap" style="height:70vh;min-height:360px"></div></div>
   </section>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="data.js"></script>
   <script src="live.js"></script>
+  <script src="streets.js"></script>
   <script src="map.js"></script>
   <script src="watch.js"></script>
 </body>

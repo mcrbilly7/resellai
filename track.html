@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Crew tracker — Nossonk LLC</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <style>
     .tap { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 1rem 0; }
@@ -38,8 +39,8 @@
         <p class="fine" id="statPct">0% of booked doors</p>
         <label>Doors this tap <input id="inc" type="number" value="1" min="1" /></label>
         <div class="tap">
-          <button class="btn navy" type="button" id="logHouse">House · 35¢</button>
-          <button class="btn navy" type="button" id="logApt">Apartment · 30¢</button>
+          <button class="btn navy" type="button" id="logHouse">House</button>
+          <button class="btn navy" type="button" id="logApt">Apartment</button>
         </div>
         <div class="hero-row">
           <button class="btn" type="button" id="undoLog">Undo last</button>
@@ -51,11 +52,13 @@
       </div>
       <p class="fine" id="gpsStatus">List updates the moment you tap House or Apartment.</p>
     </div>
-    <div class="map-pane tall"><svg id="trackMap" role="img" aria-label="Crew map"></svg></div>
+    <div class="map-pane tall"><div id="trackMap" style="height:70vh;min-height:360px"></div></div>
   </section>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="data.js"></script>
   <script src="live.js"></script>
+  <script src="streets.js"></script>
   <script src="map.js"></script>
   <script src="track.js"></script>
 </body>

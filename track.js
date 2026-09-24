@@ -6,7 +6,7 @@ job.log = job.log || [];
 job.houses = job.houses || 0;
 job.apts = job.apts || 0;
 
-const svg = document.getElementById("trackMap");
+const view = makeStreetMap("trackMap");
 const statusEl = document.getElementById("gpsStatus");
 const gate = document.getElementById("permGate");
 let watchId = null;
@@ -24,11 +24,7 @@ function persist() {
 }
 
 function paint() {
-  drawMetroMap(svg, {
-    selected: job.city,
-    path: (job.trail && job.trail.length) ? job.trail : job.path,
-    here: job.here
-  });
+  paintStreets(view, job);
 }
 
 function renderStats() {
@@ -38,7 +34,7 @@ function renderStats() {
   document.getElementById("statDone").textContent = (job.done || 0).toLocaleString();
   const pct = job.doors ? Math.min(100, Math.round((job.done || 0) / job.doors * 100)) : 0;
   document.getElementById("meterFill").style.width = pct + "%";
-  document.getElementById("statPct").textContent = pct + "% of booked doors · " + money(((job.houses||0)*0.35)+((job.apts||0)*0.30));
+  document.getElementById("statPct").textContent = (job.done || 0) + " of " + (job.doors || 0) + " doors";
   const list = document.getElementById("logList");
   list.innerHTML = "";
   if (!job.log.length) {

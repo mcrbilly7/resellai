@@ -3,7 +3,7 @@ if (location.hash.length > 1) job = decodeJob(location.hash.slice(1));
 if (!job) job = loadJob();
 if (!job) job = { id: "open", city: "Dallas", doors: 0, done: 0, houses: 0, apts: 0, log: [], path: [], trail: [] };
 
-const svg = document.getElementById("watchMap");
+const view = makeStreetMap("watchMap");
 const liveNote = document.getElementById("statPct");
 
 function apply(next) {
@@ -14,11 +14,7 @@ function apply(next) {
 }
 
 function draw() {
-  drawMetroMap(svg, {
-    selected: job.city,
-    path: (job.trail && job.trail.length) ? job.trail : job.path,
-    here: job.here
-  });
+  paintStreets(view, job);
 }
 
 function stats() {
