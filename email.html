@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Nossonk LLC</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="Nossonk LLC" /></a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="phone.html">Call</a>
+    </nav>
+  </header>
+  <section class="contact">
+    <div>
+      <p class="kicker">Email</p>
+      <h1>Write Nossonk LLC.</h1>
+      <p>This form sends to <a href="mailto:noskotx@gmail.com">noskotx@gmail.com</a>. The first time, that inbox has to confirm FormSubmit. After that, messages arrive in Gmail.</p>
+      <p><a class="btn" href="mailto:noskotx@gmail.com">Open mail app instead</a></p>
+    </div>
+    <form action="https://formsubmit.co/noskotx@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="Nossonk LLC website message" />
+      <input type="hidden" name="_captcha" value="false" />
+      <input type="hidden" name="_next" value="https://mcrbilly7.github.io/resellai/thanks.html" />
+      <label>Name <input name="name" required /></label>
+      <label>Phone <input name="phone" type="tel" /></label>
+      <label>Your email <input name="email" type="email" required /></label>
+      <label>City / doors <input name="job" placeholder="Dallas, 500 houses" /></label>
+      <label>Message <textarea name="message" rows="5" required></textarea></label>
+      <button class="btn navy" type="submit">Send email</button>
+    </form>
+  </section>
+</body>
+</html>

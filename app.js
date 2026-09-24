@@ -157,10 +157,3 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();
-document.getElementById("contactForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const data = new FormData(e.target);
-  const subject = encodeURIComponent("Nossonk LLC booking");
-  const body = encodeURIComponent(`Name: ${data.get("name")}\nReach me: ${data.get("reply")}\n\n${data.get("message") || ""}`);
-  location.href = "mailto:noskotx@gmail.com?subject=" + subject + "&body=" + body;
-});
