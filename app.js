@@ -61,6 +61,8 @@ function openBook() {
 
 function closeBook() {
   modal.classList.remove("show");
+  document.getElementById("bookStep").hidden = false;
+  document.getElementById("bookDone").hidden = true;
 }
 
 document.querySelectorAll("[data-open-book]").forEach((b) => b.addEventListener("click", openBook));
@@ -121,7 +123,11 @@ document.getElementById("bookForm").addEventListener("submit", (e) => {
     created: Date.now()
   };
   saveJob(job);
-  location.href = "track.html#" + encodeJob(job);
+  const hash = "#" + encodeJob(job);
+  document.getElementById("bookStep").hidden = true;
+  document.getElementById("bookDone").hidden = false;
+  document.getElementById("crewLink").href = "track.html" + hash;
+  document.getElementById("custLink").href = "watch.html" + hash;
 });
 
 document.getElementById("year").textContent = new Date().getFullYear();

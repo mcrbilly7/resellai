@@ -14,7 +14,10 @@ let timer = null;
 function persist() {
   if (!job) return;
   saveJob(job);
-  history.replaceState(null, "", "#" + encodeJob(job));
+  const hash = "#" + encodeJob(job);
+  history.replaceState(null, "", hash);
+  const cust = document.getElementById("toCustomer");
+  if (cust) cust.href = "watch.html" + hash;
 }
 
 function paint() {
@@ -101,10 +104,10 @@ document.getElementById("logDoors").addEventListener("click", () => {
 document.getElementById("shareLink").addEventListener("click", async () => {
   persist();
   try {
-    await navigator.clipboard.writeText(location.href);
+    await navigator.clipboard.writeText(location.origin + location.pathname.replace("track.html","watch.html") + location.hash);
     statusEl.textContent = "Job link copied.";
   } catch {
-    prompt("Copy job link", location.href);
+    prompt("Copy customer link", location.origin + location.pathname.replace("track.html","watch.html") + location.hash);
   }
 });
 

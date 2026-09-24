@@ -3,61 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nossonk LLC — Door hangers within 30 minutes of Dallas</title>
-  <meta name="description" content="Nossonk LLC hangs door hangers within 30 minutes of Dallas. 35¢ per house, 30¢ per apartment. $25 out-of-area fee, waived at 1,000 doors." />
+  <title>Nossonk LLC — Door hanger distribution in Dallas</title>
+  <meta name="description" content="Professional door hanger distribution within 30 minutes of Dallas. 35¢ per house, 30¢ per apartment. $25 out-of-area fee, waived at 1,000 doors." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="bar">
-    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="" /><span>Nossonk LLC</span></a>
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="Nossonk LLC" /></a>
     <nav>
-      <a href="#work">Work</a>
+      <a href="#work">Service</a>
       <a href="#rates">Rates</a>
-      <a href="track.html">Tracker</a>
+      <a href="#trackers">Tracking</a>
+      <a href="#contact">Contact</a>
     </nav>
-    <button class="btn dark" data-open-book type="button">Book a route</button>
+    <div class="bar-end">
+      <a class="phone" href="tel:+19452395974">(945) 239-5974</a>
+      <button class="btn navy" data-open-book type="button">Book a route</button>
+    </div>
   </header>
 
   <section class="hero">
-    <div>
-      <p class="kicker">Dallas · 30-minute service area</p>
-      <h1>Door hangers on the handle. Booked on a map, walked by a crew.</h1>
-      <p class="intro">Nossonk LLC distributes printed hangers in cities within about 30 minutes of Dallas. You book the city and door count. We walk the route. Mailboxes stay empty.</p>
+    <img src="assets/hero-home.jpg" alt="" />
+    <div class="hero-veil"></div>
+    <div class="hero-copy">
+      <p class="kicker">Dallas · thirty-minute service area</p>
+      <h1>Your hanger on the handle.<br />Not in the mailbox.</h1>
+      <p>Nossonk LLC walks cities within about thirty minutes of Dallas and places printed pieces where people actually see them.</p>
       <div class="hero-row">
-        <button class="btn dark" data-open-book type="button">Book a route</button>
-        <a class="btn light" href="tel:+19452395974">(945) 239-5974</a>
+        <button class="btn gold" data-open-book type="button">Book a route</button>
+        <a class="btn ghost" href="tel:+19452395974">Call the shop</a>
       </div>
     </div>
-    <img src="assets/hero-home.jpg" alt="North Texas front door" />
   </section>
 
   <section class="facts">
-    <div><b>35¢</b> per house</div>
-    <div><b>30¢</b> per apartment</div>
-    <div><b>$25</b> out-of-area fee</div>
-    <div><b>$0</b> fee at 1,000 doors</div>
+    <div><b>35¢</b><span>per house</span></div>
+    <div><b>30¢</b><span>per apartment</span></div>
+    <div><b>$25</b><span>out-of-area fee</span></div>
+    <div><b>1,000</b><span>doors waives the fee</span></div>
   </section>
 
   <section class="work" id="work">
-    <div>
-      <h2>What you are hiring</h2>
-      <p>A local crew to place your hanger on doors in a city we can reach from Dallas in about half an hour. No Fort Worth day trips. No out-of-metro work.</p>
-      <ol>
-        <li>Book a city on the map and set the door count.</li>
-        <li>We confirm the neighborhood list by phone or text.</li>
-        <li>The walking phone opens the tracker and shares precise GPS while the route is live.</li>
-      </ol>
+    <div class="copy">
+      <p class="kicker">The work</p>
+      <h2>A local crew, a mapped city, a count you can check.</h2>
+      <p>You book the city and whether the route is houses or apartments. We confirm the streets. The walking phone runs the crew tracker. You keep the customer view.</p>
+      <ul>
+        <li>On the handle. Never the mailbox.</li>
+        <li>Only cities about 30 minutes from Dallas.</li>
+        <li>Two links after booking: one for the hanger, one for you.</li>
+      </ul>
     </div>
-    <img src="assets/delivery.jpg" alt="Hanger on a door handle" />
+    <figure>
+      <img src="assets/delivery.jpg" alt="Crew hanging a door hanger on a front-door handle" />
+      <figcaption>Placed on the handle, in full view of the porch.</figcaption>
+    </figure>
+  </section>
+
+  <section class="trackers" id="trackers">
+    <p class="kicker">After you book</p>
+    <h2>Two trackers. One job.</h2>
+    <div class="pair">
+      <article>
+        <h3>Crew tracker</h3>
+        <p>For the phone that walks. Asks for precise location, draws the trail, and logs doors as they go up.</p>
+        <a href="track.html">Open crew tracker</a>
+      </article>
+      <article>
+        <h3>Customer view</h3>
+        <p>For the client. No GPS controls. Shows city, property type, doors finished, and the last trail the crew shared.</p>
+        <a href="watch.html">Open customer view</a>
+      </article>
+    </div>
   </section>
 
   <section class="rates" id="rates">
-    <h2>Rates</h2>
+    <div>
+      <p class="kicker">Rates</p>
+      <h2>Printed in advance. Walked at a flat door rate.</h2>
+    </div>
     <table>
       <tr><th>Houses</th><td>35¢ per door</td></tr>
       <tr><th>Apartments</th><td>30¢ per door</td></tr>
-      <tr><th>Dallas</th><td>No travel fee</td></tr>
+      <tr><th>Dallas</th><td>No out-of-area fee</td></tr>
       <tr><th>Any other booked city</th><td>$25 out-of-area fee</td></tr>
       <tr><th>1,000 doors or more</th><td>Out-of-area fee waived</td></tr>
       <tr><th>Printing</th><td>Not included</td></tr>
@@ -67,18 +99,22 @@
 
   <section class="contact" id="contact">
     <div>
-      <h2>Shop</h2>
+      <p class="kicker">Shop</p>
+      <h2>Call or text before the print run.</h2>
       <p><a href="tel:+19452395974">(945) 239-5974</a><br /><a href="mailto:noskotx@gmail.com">noskotx@gmail.com</a></p>
     </div>
     <form id="contactForm">
       <label>Name <input name="name" required /></label>
       <label>Phone or email <input name="reply" required /></label>
       <label>Message <textarea name="message" rows="4"></textarea></label>
-      <button class="btn dark" type="submit">Email the shop</button>
+      <button class="btn navy" type="submit">Email the shop</button>
     </form>
   </section>
 
-  <footer>© <span id="year"></span> Nossonk LLC</footer>
+  <footer>
+    <img src="assets/logo.jpg" alt="" />
+    <span>© <span id="year"></span> Nossonk LLC · Dallas</span>
+  </footer>
 
   <div class="modal" id="bookModal">
     <div class="sheet">
@@ -86,13 +122,13 @@
         <strong>Book a route</strong>
         <button type="button" id="closeBook" class="x">Close</button>
       </header>
-      <div class="sheet-grid">
+      <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <svg id="bookMap" role="img" aria-label="DFW service map"></svg>
+          <svg id="bookMap" role="img" aria-label="Dallas service map"></svg>
           <div class="map-tools">
             <button type="button" id="drawBtn">Draw my route</button>
             <button type="button" id="clearDraw">Clear line</button>
-            <p id="mapHint">Click a city. Map is built into the site — no live map download.</p>
+            <p id="mapHint">Click a city. The map is built into this site.</p>
           </div>
         </div>
         <form id="bookForm">
@@ -108,8 +144,14 @@
           </fieldset>
           <label>Doors <input id="bookDoors" type="number" min="1" value="500" required /></label>
           <div class="estimate" id="estimate"></div>
-          <button class="btn dark full" type="submit">Save job & open tracker</button>
+          <button class="btn navy full" type="submit">Create job links</button>
         </form>
+      </div>
+      <div class="done" id="bookDone" hidden>
+        <h3>Job is ready.</h3>
+        <p>Send the crew the hanger link. Keep the customer link for yourself.</p>
+        <a class="btn navy full" id="crewLink" href="track.html">Open crew tracker</a>
+        <a class="btn full" id="custLink" href="watch.html">Open customer view</a>
       </div>
     </div>
   </div>
