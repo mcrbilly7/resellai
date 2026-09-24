@@ -98,3 +98,18 @@ function unproject(x, y, w, h) {
   const lat = BOUNDS.north - (y / h) * (BOUNDS.north - BOUNDS.south);
   return [lat, lng];
 }
+
+function priceMix(houses, apts, city) {
+  const h = Math.max(0, parseInt(houses, 10) || 0);
+  const a = Math.max(0, parseInt(apts, 10) || 0);
+  const doors = h + a;
+  const travel = (!isDallas(city) && doors < WAIVE_AT) ? TRAVEL_FEE : 0;
+  return {
+    houses: h,
+    apts: a,
+    doors: doors,
+    travel: travel,
+    total: h * RATE_HOUSE + a * RATE_APARTMENT + travel,
+    city: city
+  };
+}

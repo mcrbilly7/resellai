@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -118,12 +119,12 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <iframe id="bookMap" title="Dallas streets" style="width:100%;height:420px;border:0" loading="eager"
-            src="https://maps.google.com/maps?q=Dallas,+TX&hl=en&z=15&t=h&output=embed"></iframe>
+          <div id="bookMap" style="height:440px;min-height:360px"></div>
           <div class="map-tools">
-            <button type="button" id="mapStreet">Streets</button>
-            <button type="button" id="mapSat">Houses / satellite</button>
-            <p id="mapHint">Google map of the city. Streets or satellite so houses show. We confirm the job before anyone gets a tracker.</p>
+            <button type="button" id="loadRoute">Show city route</button>
+            <button type="button" id="drawBtn">Click corners</button>
+            <button type="button" id="clearDraw">Clear</button>
+            <p id="mapHint">Gold dots are houses. Navy dots are apartments. Premade routes follow real streets. For a custom street, click one corner, then the next.</p>
           </div>
         </div>
         <form id="bookForm">
@@ -132,11 +133,7 @@
             <datalist id="cityList"></datalist>
           </label>
           <p class="fine" id="areaNote">Home base.</p>
-          <fieldset class="kind">
-            <legend>Property</legend>
-            <label><input type="radio" name="kind" value="house" checked /> Houses</label>
-            <label><input type="radio" name="kind" value="apartment" /> Apartments</label>
-          </fieldset>
+          <p class="fine" id="countLine">Houses and apartments load from the street map.</p>
           <fieldset class="kind">
             <legend>Piece</legend>
             <label><input type="radio" name="piece" value="hanger" checked /> Door hangers</label>
@@ -166,8 +163,10 @@
     </div>
   </div>
 
-  <script src="data.js?v=5"></script>
-  <script src="maps-v3.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data.js?v=6"></script>
+  <script src="maps-v3.js?v=6"></script>
+  <script src="buildings.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

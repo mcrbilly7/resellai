@@ -12,9 +12,9 @@ function streetLayers() {
 
 function makeStreetMap(el) {
   const layers = streetLayers();
-  const map = L.map(el, { zoomControl: true, layers: [layers.streets] }).setView([32.7767, -96.7970], 14);
+  const map = L.map(el, { zoomControl: true, layers: [layers.streets] }).setView([32.7767, -96.7970], 15);
   L.control.layers({ Streets: layers.streets, Satellite: layers.satellite }).addTo(map);
-  return { map: map, line: null, here: null, markers: [] };
+  return { map: map, line: null, here: null, houseLayer: null, aptLayer: null };
 }
 
 function paintStreets(view, job) {
