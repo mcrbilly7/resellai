@@ -3,7 +3,24 @@ if (location.hash.length > 1) job = decodeJob(location.hash.slice(1));
 if (!job) job = loadJob();
 if (!job) job = { id: "open", city: "Dallas", doors: 0, done: 0, houses: 0, apts: 0, log: [], path: [], trail: [] };
 
-const view = makeStreetMap("watchMap");
+const city = CITIES.find(function(c){return c.name===(job.city||"Dallas");}) || CITIES[0];
+const map = makeGoogleMap("watchMap", (job.here&&job.here[0])||city.lat, (job.here&&job.here[1])||city.lng, 17);
+const view = { map: map, line: null, you: null };
+function paintStreets(view, job) {
+  if (job.path && job.path.length > 1) {
+    if (view.line) view.map.removeLayer(view.line);
+    view.line = L.polyline(job.path, { color: "#0f2744", weight: 5 }).addTo(view.map);
+  }
+  if (job.trail && job.trail.length > 1) {
+    L.polyline(job.trail, { color: "#2a6", weight: 3 }).addTo(view.map);
+  }
+  if (job.here) {
+    if (view.you) view.map.removeLayer(view.you);
+    view.you = L.circleMarker(job.here, { radius: 8, color: "#fff", weight: 2, fillColor: "#c23", fillOpacity: 1 }).addTo(view.map);
+    view.map.setView(job.here, Math.max(view.map.getZoom(), 17));
+  }
+}
+
 const liveNote = document.getElementById("statPct");
 
 function apply(next) {
@@ -41,4 +58,4 @@ function stats() {
 
 draw();
 stats();
-LiveGuest(job, apply);
+LiveWatch(job, apply);

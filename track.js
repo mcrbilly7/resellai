@@ -6,7 +6,24 @@ job.log = job.log || [];
 job.houses = job.houses || 0;
 job.apts = job.apts || 0;
 
-const view = makeStreetMap("trackMap");
+const city = CITIES.find(function(c){return c.name===(job.city||"Dallas");}) || CITIES[0];
+const map = makeGoogleMap("trackMap", (job.here&&job.here[0])||city.lat, (job.here&&job.here[1])||city.lng, 17);
+const view = { map: map, line: null, you: null };
+function paintStreets(view, job) {
+  if (job.path && job.path.length > 1) {
+    if (view.line) view.map.removeLayer(view.line);
+    view.line = L.polyline(job.path, { color: "#0f2744", weight: 5 }).addTo(view.map);
+  }
+  if (job.trail && job.trail.length) {
+    L.polyline(job.trail, { color: "#2a6", weight: 3 }).addTo(view.map);
+  }
+  if (job.here) {
+    if (view.you) view.map.removeLayer(view.you);
+    view.you = L.circleMarker(job.here, { radius: 8, color: "#fff", weight: 2, fillColor: "#c23", fillOpacity: 1 }).addTo(view.map);
+    view.map.setView(job.here, Math.max(view.map.getZoom(), 17));
+  }
+}
+
 const statusEl = document.getElementById("gpsStatus");
 const gate = document.getElementById("permGate");
 let watchId = null;
@@ -15,6 +32,7 @@ let startedAt = job.startedAt || null;
 let timer = null;
 
 function persist() {
+  job.liveAt = Date.now();
   saveJob(job);
   const hash = "#" + encodeJob(job);
   history.replaceState(null, "", hash);
