@@ -297,7 +297,7 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
   const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
   try {
-    await fetch("https://formsubmit.co/ajax/noskotx@gmail.com", {
+    await fetch("https://formsubmit.co/ajax/392d527d09be6d2ef7eba61b05686ad0", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(payload),
@@ -307,7 +307,7 @@ document.getElementById("bookForm").addEventListener("submit", async (e) => {
     try {
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = "https://formsubmit.co/noskotx@gmail.com";
+      form.action = "https://formsubmit.co/392d527d09be6d2ef7eba61b05686ad0";
       form.target = "noskotx_mail";
       form.style.display = "none";
       Object.keys(payload).forEach((k) => {
