@@ -120,9 +120,9 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <iframe id="bookMap" title="Google Maps Dallas" width="100%" height="440" style="border:0;display:block;background:#e8e8e8"
-            src="https://www.google.com/maps?q=Dallas,+TX&hl=en&z=14&t=h&output=embed" allowfullscreen loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          <p class="fine" style="margin:.4rem 0 0"><a id="openGmaps" href="https://www.google.com/maps/search/?api=1&query=Dallas,+TX" target="_blank" rel="noopener">Open this area in Google Maps</a> · satellite + streets. Pick a street below for house counts.</p>
+          <svg id="bookMap" viewBox="0 0 1000 1000" style="width:100%;height:440px;background:#1c2a1a;display:block;cursor:pointer"></svg>
+          <p class="fine" style="margin:.4rem 0 0">Yellow line = street (click it). Gold dot = house (click it). Navy dot = apartment (click it).</p>
+          <p class="fine"><a id="openGmaps" href="https://www.google.com/maps/@?api=1&map_action=map&center=32.822,-96.752&zoom=16&basemap=satellite" target="_blank" rel="noopener">See this area on satellite in Google Maps (look only — you cannot click houses there)</a></p>
           <div class="map-tools">
             <button type="button" id="loadRoute">Show this city on Google</button>
             <button type="button" id="drawBtn">Click corners</button>
@@ -170,12 +170,12 @@
     </div>
   </div>
 
-  <script src="data.js?v=19"></script>
-  <script src="gmap.js?v=19"></script>
-  <script src="satmap.js?v=19"></script>
-  <script src="mail.js?v=19"></script>
-  <script src="cases.js?v=19"></script>
-  <script src="app.js?v=19"></script>
-  <script src="realcount.js?v=19"></script>
+  <script src="data.js?v=20"></script>
+  <script src="gmap.js?v=20"></script>
+  <script src="clickmap.js?v=20"></script>
+  <script src="mail.js?v=20"></script>
+  <script src="cases.js?v=20"></script>
+  <script src="app.js?v=20"></script>
+  <script src="realcount.js?v=20"></script>
 </body>
 </html>
