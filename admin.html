@@ -64,7 +64,7 @@
   <section class="desk gatebox" id="gate">
     <p class="kicker">Shop only</p>
     <h1>Open the desk</h1>
-    <p>Bookings from this browser show here. Email still goes to noskotx@gmail.com.</p>
+    <p>Every booking and email gets a case number. This desk is shared across phones.</p>
     <form id="login">
       <label>Password
         <input id="pw" type="password" autocomplete="current-password" required />
@@ -114,18 +114,23 @@
   </section>
   <div class="toast" id="toast"></div>
 
-  <script src="data.js?v=12"></script>
+  <script src="data.js?v=18"></script>
+  <script src="cases.js?v=18"></script>
   <script>
     const PASS = "Bigbilly101!";
     const KEY = "noskotx-inbox";
     let filter = "all";
 
     function loadInbox() {
-      try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
-      catch (e) { return []; }
+      return window.__CASES || JSON.parse(localStorage.getItem(KEY) || "[]");
     }
-    function saveInboxList(list) {
-      localStorage.setItem(KEY, JSON.stringify(list.slice(0, 250)));
+    async function saveInboxList(list) {
+      window.__CASES = list;
+      localStorage.setItem(KEY, JSON.stringify(list.slice(0, 400)));
+      try {
+        const pack = await ghReadCases();
+        await ghWriteCases(list.slice(0, 400), pack.sha, "Admin desk update");
+      } catch (e) {}
     }
     function toast(msg) {
       const el = document.getElementById("toast");
@@ -141,13 +146,17 @@
         customer: base + "watch.html" + hash
       };
     }
-    function setStatus(id, status) {
-      const list = loadInbox().map((j) => j.id === id ? Object.assign({}, j, { status: status }) : j);
-      saveInboxList(list);
+    async function setStatus(id, status) {
+      try { window.__CASES = await patchCase(id, { status: status }); }
+      catch (e) {
+        const list = loadInbox().map((j) => (j.id === id || j.caseNo === id) ? Object.assign({}, j, { status: status }) : j);
+        await saveInboxList(list);
+      }
       render();
     }
-    function removeJob(id) {
-      saveInboxList(loadInbox().filter((j) => j.id !== id));
+    async function removeJob(id) {
+      try { window.__CASES = await dropCase(id); }
+      catch (e) { await saveInboxList(loadInbox().filter((j) => j.id !== id && j.caseNo !== id)); }
       render();
     }
     function copy(text) {
@@ -165,7 +174,7 @@
       const all = loadInbox();
       const list = filter === "all" ? all : all.filter((j) => (j.status || "new") === filter);
       document.getElementById("inboxCount").textContent =
-        all.length ? all.length + " job" + (all.length === 1 ? "" : "s") + " on this phone." : "No jobs stored on this phone yet. Add one below or book a route on the site.";
+        all.length ? all.length + " case" + (all.length === 1 ? "" : "s") + " in the shared desk." : "No cases yet. Book a route or send a message.";
       const box = document.getElementById("rows");
       box.innerHTML = "";
       if (!list.length) {
@@ -179,7 +188,7 @@
         const art = document.createElement("article");
         art.className = "job";
         art.innerHTML =
-          "<header><h2>" + (job.name || "No name") + "</h2><span class='badge " + status + "'>" + status + "</span></header>" +
+          "<header><h2>" + (job.caseNo || job.id || "") + " · " + (job.name || "No name") + "</h2><span class='badge " + status + "'>" + status + "</span></header>" +
           "<p class='meta'>" + (job.city || "") + " · " + mix.houses + " houses · " + mix.apts + " apartments · " +
           mix.doors + " doors · " + money(mix.total) + "<br/>" +
           (job.phone || "no phone") + " · " + (job.email || "no email") + "<br/>" +
@@ -221,9 +230,11 @@
       });
     }
 
-    function openInbox() {
+    async function openInbox() {
       document.getElementById("gate").hidden = true;
       document.getElementById("inbox").hidden = false;
+      document.getElementById("inboxCount").textContent = "Loading shared desk…";
+      try { window.__CASES = await fetchCases(); } catch (e) { window.__CASES = loadInbox(); }
       render();
     }
 
@@ -269,12 +280,17 @@
         status: "new",
         created: Date.now()
       };
-      const list = loadInbox();
-      list.unshift(job);
-      saveInboxList(list);
+      job.caseNo = newCaseNo();
+      job.id = job.caseNo;
+      job.kind = "booking";
+      addCase(job).then(function () { toast("Case " + job.caseNo + " saved"); openInbox(); }).catch(function () {
+        const list = loadInbox();
+        list.unshift(job);
+        saveInboxList(list);
+        toast("Saved on this phone only");
+        render();
+      });
       e.target.reset();
-      toast("Job saved");
-      render();
     });
     if (sessionStorage.getItem("noskotx-admin") === "1") openInbox();
   </script>

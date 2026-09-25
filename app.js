@@ -355,12 +355,17 @@ document.getElementById("bookForm").addEventListener("submit", async function (e
     trail: [],
     created: Date.now()
   };
+  job.caseNo = (typeof newCaseNo === "function" ? newCaseNo() : job.id);
+  job.kind = "booking";
   saveJob(job);
   saveInbox(job);
+  if (typeof addCase === "function") addCase(job);
   const hash = "#" + encodeJob(job);
   const base = location.origin + location.pathname.replace(/index\.html$/, "");
   const payload = {
-    _subject: "Nossonk booking request — confirm then send tracker",
+    _subject: "Nossonk booking request [" + job.caseNo + "]",
+    case_number: job.caseNo,
+    caseNo: job.caseNo,
     name: name,
     phone: phone,
     email: email,
@@ -374,7 +379,7 @@ document.getElementById("bookForm").addEventListener("submit", async function (e
     piece: piece,
     crew_link: base + "track.html" + hash,
     customer_link: base + "watch.html" + hash,
-    _autoresponse: "Thank you for booking a route with Nossonk LLC. We received your request. We will confirm it and get back to you within 48 hours."
+    _autoresponse: "Thank you for booking with Nossonk LLC. Case " + job.caseNo + ". We received your request and will get back to you within 48 hours. After we confirm, we will send your private tracker."
   };
   showBooked(sendvia, name);
   try {
