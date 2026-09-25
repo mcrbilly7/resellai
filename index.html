@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -120,15 +121,8 @@
       </header>
       <div class="sheet-grid" id="bookStep">
         <div class="map-pane">
-          <div id="gwrap" style="position:relative;height:440px;background:#e8e8e8">
-            <iframe id="bookMap" title="Google Map" style="width:100%;height:440px;border:0;display:block;pointer-events:none"
-              src="https://maps.google.com/maps?q=Dallas,+TX&z=16&hl=en&t=m&output=embed"></iframe>
-            <svg id="drawLayer" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></svg>
-            <div style="position:absolute;left:10px;top:10px;display:flex;gap:6px;z-index:3">
-              <button type="button" id="zoomIn">+</button>
-              <button type="button" id="zoomOut">−</button>
-            </div>
-          </div>
+          <div id="bookMap" style="height:440px;min-height:380px;background:#1b1b1b"></div>
+          <p class="fine" style="margin:.4rem 0 0">Yellow line = street. Gold dot = house. Navy dot = apartment. Satellite underneath.</p>
           <div class="map-tools">
             <button type="button" id="loadRoute">Show this city on Google</button>
             <button type="button" id="drawBtn">Click corners</button>
@@ -176,10 +170,12 @@
     </div>
   </div>
 
-  <script src="data.js?v=16"></script>
-  <script src="gmap.js?v=16"></script>
-  <script src="mail.js?v=16"></script>
-  <script src="app.js?v=16"></script>
-  <script src="realcount.js?v=16"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data.js?v=17"></script>
+  <script src="gmap.js?v=17"></script>
+  <script src="satmap.js?v=17"></script>
+  <script src="mail.js?v=17"></script>
+  <script src="app.js?v=17"></script>
+  <script src="realcount.js?v=17"></script>
 </body>
 </html>

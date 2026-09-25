@@ -83,34 +83,11 @@ function nearPath(pt, path, maxM) {
 }
 
 async function loadCityGeo(city) {
-  const around = "(around:1200," + city.lat + "," + city.lng + ")";
-  const q = "[out:json][timeout:20];" +
-    "way[\"highway\"~\"^(residential|living_street)$\"]" + around + ";out geom tags;" +
-    "way[\"building\"]" + around + ";out center tags;" +
-    "node[\"building\"]" + around + ";out tags;";
-  const data = await overpassQuery(q);
-  const streets = [];
-  const houses = [];
-  const apts = [];
-  (data.elements || []).forEach(function (el) {
-    const tags = el.tags || {};
-    if (tags.highway && el.geometry && el.geometry.length > 1) {
-      const path = el.geometry.map(function (g) { return [g.lat, g.lon]; });
-      streets.push({
-        name: tags.name || "Residential street",
-        path: path,
-        center: path[Math.floor(path.length / 2)],
-        id: el.id
-      });
-    }
-    if (tags.building) {
-      const pt = centerOf(el);
-      if (!pt) return;
-      if (classifyBuilding(tags) === "apt") apts.push(pt);
-      else houses.push(pt);
-    }
-  });
-  return { streets: streets, houses: houses, apts: apts };
+  if (!window.OFFLINE_MAP) {
+    const res = await fetch("offline-map.json");
+    window.OFFLINE_MAP = await res.json();
+  }
+  return window.OFFLINE_MAP[city.name] || {streets:[],houses:[],apts:[],lat:city.lat,lng:city.lng};
 }
 
 function countAlong(geo, path) {

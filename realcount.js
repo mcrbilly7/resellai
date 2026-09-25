@@ -44,6 +44,9 @@ loadCity = async function () {
   } catch (err) {
     geo = { streets: [], houses: [], apts: [] };
   }
+  if (typeof ensureSat === "function") ensureSat();
+  if (typeof showGoogle === "function") showGoogle(match.lat, match.lng, 16);
+  if (typeof drawOfflineCity === "function") drawOfflineCity(geo);
   premade = typeof twentyRoutes === "function" ? twentyRoutes(geo, match) : [];
   renderRouteList();
   if (premade.length) {
