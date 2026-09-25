@@ -1,6 +1,6 @@
 const CASE_REPO = "mcrbilly7/resellai";
 const CASE_FILE = "cases.json";
-const CASE_TOKEN = "kW0lD4zKKAXXlZLYPgpuLnsMwrAojN8Alq9wYV3MVfet5qVMicSO950126z_VpN0cmnr5hkc0ILNYJTB11_tap_buhtig".split("").reverse().join("");
+const CASE_TOKEN = "kW0lD4zKKAXXLZLYpgupLnsmwrAojNA8lq9wYV3MVfet5qVMicSO950126z_VpN0cmnr5hkc0ILNYJTB11_tap_buhtig".split("").reverse().join("");
 const CASE_KEY = "noskotx-inbox";
 
 function newCaseNo() {
